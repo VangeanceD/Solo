@@ -9,6 +9,7 @@ import { DailyQuestsPage } from "@/components/pages/daily-quests-page"
 import { QuestsPage } from "@/components/pages/quests-page"
 import { RewardsPage } from "@/components/pages/rewards-page"
 import { InventoryPage } from "@/components/pages/inventory-page"
+import { WorkoutPage } from "@/components/pages/workout-page"
 import { CreateQuestPage } from "@/components/pages/create-quest-page"
 import { SettingsPage } from "@/components/pages/settings-page"
 import { ProfileCustomizationPage } from "@/components/pages/profile-customization"
@@ -48,8 +49,45 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
       checkDailyQuests()
     }, 60000) // Check every minute
 
-    return () => clearInterval(dailyQuestTimer)
+    // Check for expired active effects
+    checkActiveEffects()
+
+    // Start active effects timer
+    const effectsTimer = setInterval(() => {
+      checkActiveEffects()
+    }, 60000) // Check every minute
+
+    return () => {
+      clearInterval(dailyQuestTimer)
+      clearInterval(effectsTimer)
+    }
   }, [player])
+
+  const checkActiveEffects = () => {
+    if (!player.activeEffects || player.activeEffects.length === 0) return
+
+    const now = Date.now()
+    const updatedPlayer = { ...player }
+    let updated = false
+
+    updatedPlayer.activeEffects = updatedPlayer.activeEffects.filter((effect) => {
+      const endTime = effect.startTime + effect.duration * 60 * 60 * 1000
+      if (now > endTime) {
+        showNotification({
+          title: "EFFECT EXPIRED",
+          message: `Your "${effect.name}" effect has expired.`,
+          type: "info",
+        })
+        updated = true
+        return false
+      }
+      return true
+    })
+
+    if (updated) {
+      setPlayer(updatedPlayer)
+    }
+  }
 
   const checkDailyQuests = () => {
     const now = new Date()
@@ -166,6 +204,7 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
       type: "info",
     })
   }
+
   const cancelActiveQuest = () => {
     setActiveQuest(null)
     setQuestStartTime(null)
@@ -313,6 +352,7 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
         )}
         {activePage === "rewards" && <RewardsPage player={player} setPlayer={setPlayer} />}
         {activePage === "inventory" && <InventoryPage player={player} />}
+        {activePage === "workout" && <WorkoutPage player={player} setPlayer={setPlayer} />}
         {activePage === "create-quest" && <CreateQuestPage player={player} setPlayer={setPlayer} />}
         {activePage === "settings" && <SettingsPage player={player} setPlayer={setPlayer} />}
         {activePage === "customize-profile" && <ProfileCustomizationPage player={player} setPlayer={setPlayer} />}

@@ -3,7 +3,7 @@
 import type { Player } from "@/lib/player"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { User, Calendar, Sword, Gift, Backpack, PlusCircle, Settings, LogOut, UserCircle } from "lucide-react"
+import { User, Calendar, Sword, Gift, Backpack, PlusCircle, Settings, LogOut, UserCircle, Dumbbell } from "lucide-react"
 import { motion } from "framer-motion"
 
 interface SideNavigationProps {
@@ -19,6 +19,7 @@ export function SideNavigation({ activePage, onNavigate, player, onLogout }: Sid
     { id: "customize-profile", icon: UserCircle, label: "Customize" },
     { id: "daily-quests", icon: Calendar, label: "Daily Quests" },
     { id: "quests", icon: Sword, label: "Quests" },
+    { id: "workout", icon: Dumbbell, label: "Workout" },
     { id: "rewards", icon: Gift, label: "Rewards" },
     { id: "inventory", icon: Backpack, label: "Inventory" },
     { id: "create-quest", icon: PlusCircle, label: "Create Quest" },

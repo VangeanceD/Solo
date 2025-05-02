@@ -63,7 +63,30 @@ export interface Settings {
   notifications: boolean
 }
 
+export interface Workout {
+  id: string
+  name: string
+  type: string
+  exercises: any[]
+  duration: number
+  difficulty: string
+  xpReward: number
+  muscleTargets: MuscleGroup[]
+  completed?: boolean
+  completedAt?: Date
+  custom: boolean
+}
+
+export interface ActiveEffect {
+  id: string
+  name: string
+  effect: string
+  startTime: number
+  duration: number
+}
+
 export interface Player {
+  id?: string
   name: string
   level: number
   xp: number
@@ -86,6 +109,9 @@ export interface Player {
   titles: string[]
   selectedTitle: string | null
   friends: string[]
+  completedWorkouts?: Workout[]
+  activeEffects?: ActiveEffect[]
+  reducedWorkoutTime?: boolean
 }
 
 export const XP_PER_LEVEL = 100
@@ -196,7 +222,7 @@ export function createDefaultPlayer(name: string): Player {
         title: "Morning Exercise",
         description: "Complete a 10-minute workout to start your day energized",
         xp: 50,
-        penalty: 100,
+        penalty: 150, // Increased penalty (3x reward)
         timeLimit: 10,
         category: "physical",
         completed: false,
@@ -212,7 +238,7 @@ export function createDefaultPlayer(name: string): Player {
         title: "Meditation Session",
         description: "Practice mindfulness meditation to improve focus",
         xp: 30,
-        penalty: 60,
+        penalty: 90, // Increased penalty (3x reward)
         timeLimit: 5,
         category: "mental",
         completed: false,
@@ -294,5 +320,7 @@ export function createDefaultPlayer(name: string): Player {
     titles: ["Beginner", "Rookie Hunter", "Aspiring Hero"],
     selectedTitle: "Beginner",
     friends: [],
+    completedWorkouts: [],
+    activeEffects: [],
   }
 }
