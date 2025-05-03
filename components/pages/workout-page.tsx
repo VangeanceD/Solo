@@ -7,11 +7,28 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calendar } from "@/components/ui/calendar"
 import { useNotification } from "@/components/notification-provider"
-import { motion } from "framer-motion"
-import { Trophy, Star, AlertTriangle, X, Check } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import {
+  Trophy,
+  Star,
+  AlertTriangle,
+  X,
+  Check,
+  Dumbbell,
+  CalendarIcon,
+  Activity,
+  Flame,
+  Award,
+  TrendingUp,
+  BarChart,
+  Clock,
+  Zap,
+  Target,
+} from "lucide-react"
 import Image from "next/image"
 import { supabase } from "@/lib/supabaseClient"
 import { format } from "date-fns"
+import { Badge } from "@/components/ui/badge"
 
 interface WorkoutPageProps {
   player: Player
@@ -31,6 +48,7 @@ interface Exercise {
   duration?: number
   xpReward: number
   description: string
+  image?: string
 }
 
 interface Workout {
@@ -45,9 +63,10 @@ interface Workout {
   completed?: boolean
   completedAt?: Date
   custom: boolean
+  image?: string
 }
 
-// Default exercises
+// Default exercises with improved descriptions
 const defaultExercises: Exercise[] = [
   {
     id: "ex1",
@@ -56,7 +75,9 @@ const defaultExercises: Exercise[] = [
     sets: 3,
     reps: 10,
     xpReward: 50,
-    description: "Standard push-ups targeting chest, triceps, and shoulders",
+    description:
+      "Standard push-ups targeting chest, triceps, and shoulders. Keep your body straight and core engaged throughout the movement.",
+    image: "/placeholder.svg?height=200&width=300",
   },
   {
     id: "ex2",
@@ -65,7 +86,9 @@ const defaultExercises: Exercise[] = [
     sets: 3,
     reps: 8,
     xpReward: 70,
-    description: "Pull-ups targeting back and biceps",
+    description:
+      "Pull-ups targeting back and biceps. Grip the bar with hands shoulder-width apart and pull your body up until your chin clears the bar.",
+    image: "/placeholder.svg?height=200&width=300",
   },
   {
     id: "ex3",
@@ -74,7 +97,9 @@ const defaultExercises: Exercise[] = [
     sets: 4,
     reps: 12,
     xpReward: 60,
-    description: "Bodyweight squats targeting quadriceps, hamstrings, and glutes",
+    description:
+      "Bodyweight squats targeting quadriceps, hamstrings, and glutes. Keep your chest up and back straight as you lower your body.",
+    image: "/placeholder.svg?height=200&width=300",
   },
   {
     id: "ex4",
@@ -82,7 +107,9 @@ const defaultExercises: Exercise[] = [
     muscleTargets: ["core", "abs"],
     duration: 60,
     xpReward: 40,
-    description: "Plank position held for time to strengthen core",
+    description:
+      "Plank position held for time to strengthen core. Maintain a straight line from head to heels and engage your core muscles.",
+    image: "/placeholder.svg?height=200&width=300",
   },
   {
     id: "ex5",
@@ -90,7 +117,9 @@ const defaultExercises: Exercise[] = [
     muscleTargets: ["cardio", "legs"],
     duration: 1800,
     xpReward: 100,
-    description: "30-minute run for cardiovascular endurance",
+    description:
+      "30-minute run for cardiovascular endurance. Maintain a steady pace that challenges you but allows you to complete the full duration.",
+    image: "/placeholder.svg?height=200&width=300",
   },
   {
     id: "ex6",
@@ -99,7 +128,9 @@ const defaultExercises: Exercise[] = [
     sets: 3,
     reps: 12,
     xpReward: 40,
-    description: "Bicep curls with dumbbells",
+    description:
+      "Bicep curls with dumbbells. Keep your elbows close to your sides and focus on controlled movements throughout the exercise.",
+    image: "/placeholder.svg?height=200&width=300",
   },
   {
     id: "ex7",
@@ -108,7 +139,9 @@ const defaultExercises: Exercise[] = [
     sets: 3,
     reps: 12,
     xpReward: 40,
-    description: "Tricep dips on a bench or chair",
+    description:
+      "Tricep dips on a bench or chair. Lower your body with control and push back up by extending your elbows fully.",
+    image: "/placeholder.svg?height=200&width=300",
   },
   {
     id: "ex8",
@@ -117,7 +150,9 @@ const defaultExercises: Exercise[] = [
     sets: 3,
     reps: 10,
     xpReward: 50,
-    description: "Overhead press targeting shoulders",
+    description:
+      "Overhead press targeting shoulders. Press the weights directly overhead, keeping your core engaged and avoiding arching your back.",
+    image: "/placeholder.svg?height=200&width=300",
   },
   {
     id: "ex9",
@@ -126,7 +161,9 @@ const defaultExercises: Exercise[] = [
     sets: 3,
     reps: 15,
     xpReward: 30,
-    description: "Abdominal crunches for core strength",
+    description:
+      "Abdominal crunches for core strength. Focus on the contraction of your abdominal muscles rather than the range of motion.",
+    image: "/placeholder.svg?height=200&width=300",
   },
   {
     id: "ex10",
@@ -135,11 +172,13 @@ const defaultExercises: Exercise[] = [
     sets: 3,
     reps: 8,
     xpReward: 80,
-    description: "Deadlifts targeting lower back, hamstrings, and glutes",
+    description:
+      "Deadlifts targeting lower back, hamstrings, and glutes. Maintain a neutral spine and engage your core throughout the movement.",
+    image: "/placeholder.svg?height=200&width=300",
   },
 ]
 
-// Default workouts
+// Default workouts with improved descriptions and images
 const defaultWorkouts: Workout[] = [
   {
     id: "w1",
@@ -151,6 +190,7 @@ const defaultWorkouts: Workout[] = [
     xpReward: 200,
     muscleTargets: ["chest", "back", "legs", "core"],
     custom: false,
+    image: "/placeholder.svg?height=300&width=500",
   },
   {
     id: "w2",
@@ -168,6 +208,7 @@ const defaultWorkouts: Workout[] = [
     xpReward: 250,
     muscleTargets: ["chest", "back", "arms", "shoulders"],
     custom: false,
+    image: "/placeholder.svg?height=300&width=500",
   },
   {
     id: "w3",
@@ -179,6 +220,7 @@ const defaultWorkouts: Workout[] = [
     xpReward: 150,
     muscleTargets: ["cardio", "legs"],
     custom: false,
+    image: "/placeholder.svg?height=300&width=500",
   },
   {
     id: "w4",
@@ -190,6 +232,7 @@ const defaultWorkouts: Workout[] = [
     xpReward: 300,
     muscleTargets: ["legs", "back"],
     custom: false,
+    image: "/placeholder.svg?height=300&width=500",
   },
   {
     id: "w5",
@@ -201,6 +244,7 @@ const defaultWorkouts: Workout[] = [
     xpReward: 120,
     muscleTargets: ["core", "abs"],
     custom: false,
+    image: "/placeholder.svg?height=300&width=500",
   },
 ]
 
@@ -217,6 +261,7 @@ export function WorkoutPage({ player, setPlayer }: WorkoutPageProps) {
   const [exerciseTimer, setExerciseTimer] = useState<NodeJS.Timeout | null>(null)
   const [remainingTime, setRemainingTime] = useState(0)
   const [isHighStakes, setIsHighStakes] = useState(false)
+  const [workoutFilter, setWorkoutFilter] = useState<WorkoutType | "all">("all")
 
   const { showNotification } = useNotification()
 
@@ -260,6 +305,12 @@ export function WorkoutPage({ player, setPlayer }: WorkoutPageProps) {
         workoutDate.getFullYear() === date.getFullYear()
       )
     })
+  }
+
+  // Get filtered workouts
+  const getFilteredWorkouts = () => {
+    if (workoutFilter === "all") return workouts
+    return workouts.filter((workout) => workout.type === workoutFilter)
   }
 
   // Start workout
@@ -445,6 +496,40 @@ export function WorkoutPage({ player, setPlayer }: WorkoutPageProps) {
     return `${mins}:${secs.toString().padStart(2, "0")}`
   }
 
+  // Get difficulty color
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "beginner":
+        return "bg-green-900/30 text-green-400"
+      case "intermediate":
+        return "bg-blue-900/30 text-blue-400"
+      case "advanced":
+        return "bg-purple-900/30 text-purple-400"
+      case "elite":
+        return "bg-red-900/30 text-red-400"
+      default:
+        return "bg-primary/10 text-primary/70"
+    }
+  }
+
+  // Get workout type icon
+  const getWorkoutTypeIcon = (type: WorkoutType) => {
+    switch (type) {
+      case "strength":
+        return <Dumbbell className="w-4 h-4" />
+      case "cardio":
+        return <Activity className="w-4 h-4" />
+      case "flexibility":
+        return <TrendingUp className="w-4 h-4" />
+      case "balance":
+        return <Target className="w-4 h-4" />
+      case "endurance":
+        return <Flame className="w-4 h-4" />
+      default:
+        return <Dumbbell className="w-4 h-4" />
+    }
+  }
+
   return (
     <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
       <div className="flex justify-between items-center">
@@ -463,20 +548,35 @@ export function WorkoutPage({ player, setPlayer }: WorkoutPageProps) {
 
       <Tabs defaultValue="calendar" className="w-full" onValueChange={setActiveTab}>
         <TabsList className="grid grid-cols-3 mb-4">
-          <TabsTrigger value="calendar" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
+          <TabsTrigger
+            value="calendar"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary flex items-center gap-2"
+          >
+            <CalendarIcon className="w-4 h-4" />
             Calendar
           </TabsTrigger>
-          <TabsTrigger value="workouts" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
+          <TabsTrigger
+            value="workouts"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary flex items-center gap-2"
+          >
+            <Dumbbell className="w-4 h-4" />
             Workouts
           </TabsTrigger>
-          <TabsTrigger value="progress" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
-            Muscle Progress
+          <TabsTrigger
+            value="progress"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary flex items-center gap-2"
+          >
+            <BarChart className="w-4 h-4" />
+            Progress
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="calendar" className="mt-0">
           <Card className="bg-black/80 backdrop-blur-lg p-6 rounded-none border border-primary/30 shadow-[0_0_15px_rgba(0,168,255,0.3)] cyberpunk-border holographic-ui">
-            <div className="holographic-header">Workout Calendar</div>
+            <div className="holographic-header flex items-center gap-2">
+              <CalendarIcon className="w-5 h-5 text-primary" />
+              Workout Calendar
+            </div>
 
             <div className="flex flex-col md:flex-row gap-6">
               <div className="w-full md:w-1/2">
@@ -489,46 +589,93 @@ export function WorkoutPage({ player, setPlayer }: WorkoutPageProps) {
                     day_today: "bg-primary/20 text-primary",
                     day_selected: "bg-primary text-primary-foreground",
                     day: "text-primary/70 hover:bg-primary/10 focus:bg-primary/20 rounded-sm",
+                    day_range_middle: "bg-primary/10 text-primary",
+                    day_hidden: "invisible",
+                    nav_button: "text-primary hover:bg-primary/10",
+                    caption: "text-primary font-michroma",
+                    table: "font-electrolize",
+                    head_cell: "text-primary/50 font-michroma",
+                    cell: "text-primary/70 p-0",
+                    nav_button_previous: "absolute left-1",
+                    nav_button_next: "absolute right-1",
+                    caption_label: "text-primary",
+                  }}
+                  components={{
+                    DayContent: ({ day, date }) => {
+                      // Check if there are workouts on this date
+                      const hasWorkouts = getWorkoutsForDate(date).length > 0
+
+                      return (
+                        <div className="relative w-full h-full flex items-center justify-center">
+                          {day}
+                          {hasWorkouts && (
+                            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></div>
+                          )}
+                        </div>
+                      )
+                    },
                   }}
                 />
               </div>
 
               <div className="w-full md:w-1/2">
                 <div className="bg-black/60 p-4 rounded-none border border-primary/30 h-full">
-                  <h3 className="text-lg font-bold text-primary mb-3 font-michroma">
+                  <h3 className="text-lg font-bold text-primary mb-3 font-michroma flex items-center gap-2">
+                    <CalendarIcon className="w-5 h-5 text-primary" />
                     {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Select a date"}
                   </h3>
 
                   {selectedDate && (
                     <>
                       <div className="mb-4">
-                        <h4 className="text-primary/80 font-electrolize mb-2">Completed Workouts:</h4>
+                        <h4 className="text-primary/80 font-electrolize mb-2 flex items-center gap-2">
+                          <Activity className="w-4 h-4 text-primary/80" />
+                          Completed Workouts:
+                        </h4>
                         {getWorkoutsForDate(selectedDate).length > 0 ? (
                           <div className="space-y-2">
                             {getWorkoutsForDate(selectedDate).map((workout, index) => (
-                              <div
+                              <motion.div
                                 key={index}
-                                className="bg-primary/10 p-3 rounded-none border border-primary/30 flex justify-between items-center"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3, delay: index * 0.1 }}
+                                className="bg-primary/10 p-3 rounded-none border border-primary/30 flex justify-between items-center hover:bg-primary/20 transition-colors"
                               >
-                                <div>
-                                  <div className="text-primary font-michroma">{workout.name}</div>
-                                  <div className="text-primary/60 text-sm font-electrolize">
-                                    {workout.type} • {workout.duration} min
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-none bg-primary/20 flex items-center justify-center">
+                                    {getWorkoutTypeIcon(workout.type)}
+                                  </div>
+                                  <div>
+                                    <div className="text-primary font-michroma">{workout.name}</div>
+                                    <div className="text-primary/60 text-sm font-electrolize flex items-center gap-2">
+                                      <span className={`px-2 py-0.5 text-xs ${getDifficultyColor(workout.difficulty)}`}>
+                                        {workout.difficulty}
+                                      </span>
+                                      <span>•</span>
+                                      <Clock className="w-3 h-3 text-primary/60" />
+                                      <span>{workout.duration} min</span>
+                                    </div>
                                   </div>
                                 </div>
-                                <div className="text-primary font-orbitron">+{workout.xpReward} XP</div>
-                              </div>
+                                <div className="text-primary font-orbitron flex items-center gap-1">
+                                  <Zap className="w-4 h-4 text-primary" />+{workout.xpReward} XP
+                                </div>
+                              </motion.div>
                             ))}
                           </div>
                         ) : (
-                          <div className="text-primary/60 font-electrolize">No workouts completed on this date.</div>
+                          <div className="text-primary/60 font-electrolize p-4 border border-dashed border-primary/30 text-center bg-black/30">
+                            No workouts completed on this date.
+                          </div>
                         )}
                       </div>
 
                       <Button
                         onClick={() => setActiveTab("workouts")}
-                        className="w-full py-2 bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary"
+                        className="w-full py-2 bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary flex items-center justify-center gap-2"
                       >
+                        <Dumbbell className="w-4 h-4" />
                         START NEW WORKOUT
                       </Button>
                     </>
@@ -541,12 +688,15 @@ export function WorkoutPage({ player, setPlayer }: WorkoutPageProps) {
 
         <TabsContent value="workouts" className="mt-0">
           <Card className="bg-black/80 backdrop-blur-lg p-6 rounded-none border border-primary/30 shadow-[0_0_15px_rgba(0,168,255,0.3)] cyberpunk-border holographic-ui">
-            <div className="holographic-header">Available Workouts</div>
+            <div className="holographic-header flex items-center gap-2">
+              <Dumbbell className="w-5 h-5 text-primary" />
+              Available Workouts
+            </div>
 
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col md:flex-row items-center justify-between mb-4 gap-4">
               <div className="flex items-center space-x-2">
                 <div
-                  className={`w-6 h-6 rounded-full ${isHighStakes ? "bg-red-500" : "bg-primary/20"} flex items-center justify-center cursor-pointer`}
+                  className={`w-6 h-6 rounded-full ${isHighStakes ? "bg-red-500" : "bg-primary/20"} flex items-center justify-center cursor-pointer transition-colors duration-300`}
                   onClick={() => setIsHighStakes(!isHighStakes)}
                 >
                   {isHighStakes && <Check className="w-4 h-4 text-white" />}
@@ -557,41 +707,90 @@ export function WorkoutPage({ player, setPlayer }: WorkoutPageProps) {
               </div>
 
               {isHighStakes && (
-                <div className="text-red-500 text-sm font-electrolize">
+                <div className="text-red-500 text-sm font-electrolize flex items-center">
                   <AlertTriangle className="w-4 h-4 inline mr-1" />
                   Double XP rewards, triple XP penalties!
                 </div>
               )}
+
+              <div className="flex items-center gap-2">
+                <span className="text-primary/70 font-michroma text-sm">Filter:</span>
+                <div className="flex">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setWorkoutFilter("all")}
+                    className={`px-3 py-1 rounded-none border ${workoutFilter === "all" ? "bg-primary/20 text-primary border-primary" : "border-primary/30 text-primary/70"}`}
+                  >
+                    All
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setWorkoutFilter("strength")}
+                    className={`px-3 py-1 rounded-none border ${workoutFilter === "strength" ? "bg-primary/20 text-primary border-primary" : "border-primary/30 text-primary/70"}`}
+                  >
+                    Strength
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setWorkoutFilter("cardio")}
+                    className={`px-3 py-1 rounded-none border ${workoutFilter === "cardio" ? "bg-primary/20 text-primary border-primary" : "border-primary/30 text-primary/70"}`}
+                  >
+                    Cardio
+                  </Button>
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {workouts.map((workout, index) => (
+              {getFilteredWorkouts().map((workout, index) => (
                 <motion.div
                   key={workout.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className="bg-black/60 p-4 rounded-none border border-primary/30 quest-card holographic-ui"
+                  className="bg-black/60 p-4 rounded-none border border-primary/30 quest-card holographic-ui overflow-hidden"
                 >
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-semibold text-primary font-michroma">{workout.name}</h3>
-                    <div className="px-2 py-1 bg-primary/10 text-primary/70 rounded-none text-xs font-electrolize">
+                    <Badge className={`${getDifficultyColor(workout.difficulty)} rounded-none`}>
                       {workout.difficulty}
-                    </div>
+                    </Badge>
                   </div>
 
                   <div className="mt-2 text-primary/60 font-electrolize">
-                    <div>Type: {workout.type}</div>
-                    <div>Duration: {workout.duration} minutes</div>
-                    <div>Targets: {workout.muscleTargets.join(", ")}</div>
+                    <div className="flex items-center gap-2 mb-1">
+                      {getWorkoutTypeIcon(workout.type)}
+                      <span className="capitalize">{workout.type}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Clock className="w-4 h-4 text-primary/60" />
+                      <span>{workout.duration} minutes</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {workout.muscleTargets.map((target) => (
+                        <span
+                          key={target}
+                          className="px-2 py-0.5 bg-primary/10 text-primary/70 text-xs font-electrolize"
+                        >
+                          {target}
+                        </span>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="mt-3 flex justify-between items-center">
                     <div className="text-primary/80 font-orbitron">
                       {isHighStakes ? (
-                        <span className="text-red-500">+{workout.xpReward * 2} XP</span>
+                        <span className="text-red-500 flex items-center gap-1">
+                          <Flame className="w-4 h-4" />+{workout.xpReward * 2} XP
+                        </span>
                       ) : (
-                        <span>+{workout.xpReward} XP</span>
+                        <span className="flex items-center gap-1">
+                          <Zap className="w-4 h-4 text-primary" />+{workout.xpReward} XP
+                        </span>
                       )}
                     </div>
 
@@ -600,8 +799,9 @@ export function WorkoutPage({ player, setPlayer }: WorkoutPageProps) {
                         setSelectedWorkout(workout)
                         startWorkout(workout)
                       }}
-                      className="py-2 px-4 bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary"
+                      className="py-2 px-4 bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary flex items-center gap-2"
                     >
+                      <Dumbbell className="w-4 h-4" />
                       START
                     </Button>
                   </div>
@@ -613,7 +813,10 @@ export function WorkoutPage({ player, setPlayer }: WorkoutPageProps) {
 
         <TabsContent value="progress" className="mt-0">
           <Card className="bg-black/80 backdrop-blur-lg p-6 rounded-none border border-primary/30 shadow-[0_0_15px_rgba(0,168,255,0.3)] cyberpunk-border holographic-ui">
-            <div className="holographic-header">Muscle Progress</div>
+            <div className="holographic-header flex items-center gap-2">
+              <BarChart className="w-5 h-5 text-primary" />
+              Muscle Progress
+            </div>
 
             <div className="flex flex-col md:flex-row gap-6">
               <div className="w-full md:w-1/2 flex justify-center">
@@ -694,12 +897,15 @@ export function WorkoutPage({ player, setPlayer }: WorkoutPageProps) {
               </div>
 
               <div className="w-full md:w-1/2">
-                <h3 className="text-xl font-bold text-primary mb-3 solo-text font-michroma">Muscle Stats</h3>
+                <h3 className="text-xl font-bold text-primary mb-3 solo-text font-michroma flex items-center gap-2">
+                  <Award className="w-5 h-5 text-primary" />
+                  Muscle Stats
+                </h3>
                 <div className="grid grid-cols-2 gap-2">
                   {Object.entries(player.muscles).map(([muscle, rank]) => (
                     <div
                       key={muscle}
-                      className={`p-3 rounded-none border border-primary/30 ${getMuscleRankColor(rank as MuscleRank)}`}
+                      className={`p-3 rounded-none border border-primary/30 ${getMuscleRankColor(rank as MuscleRank)} hover:border-primary/60 transition-colors`}
                     >
                       <div className="flex justify-between items-center">
                         <span className="capitalize font-electrolize">{muscle}</span>
@@ -724,14 +930,23 @@ export function WorkoutPage({ player, setPlayer }: WorkoutPageProps) {
                 </div>
 
                 <div className="mt-6">
-                  <h3 className="text-xl font-bold text-primary mb-3 solo-text font-michroma">Workout Stats</h3>
+                  <h3 className="text-xl font-bold text-primary mb-3 solo-text font-michroma flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-primary" />
+                    Workout Stats
+                  </h3>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-black/60 p-3 rounded-none border border-primary/30">
-                      <div className="text-primary/70 font-electrolize">Total Workouts</div>
+                    <div className="bg-black/60 p-3 rounded-none border border-primary/30 hover:border-primary/60 transition-colors">
+                      <div className="text-primary/70 font-electrolize flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-primary/70" />
+                        Total Workouts
+                      </div>
                       <div className="text-2xl font-bold text-primary font-orbitron">{completedWorkouts.length}</div>
                     </div>
-                    <div className="bg-black/60 p-3 rounded-none border border-primary/30">
-                      <div className="text-primary/70 font-electrolize">This Week</div>
+                    <div className="bg-black/60 p-3 rounded-none border border-primary/30 hover:border-primary/60 transition-colors">
+                      <div className="text-primary/70 font-electrolize flex items-center gap-2">
+                        <CalendarIcon className="w-4 h-4 text-primary/70" />
+                        This Week
+                      </div>
                       <div className="text-2xl font-bold text-primary font-orbitron">
                         {
                           completedWorkouts.filter((w) => {
@@ -744,14 +959,20 @@ export function WorkoutPage({ player, setPlayer }: WorkoutPageProps) {
                         }
                       </div>
                     </div>
-                    <div className="bg-black/60 p-3 rounded-none border border-primary/30">
-                      <div className="text-primary/70 font-electrolize">Total XP Earned</div>
+                    <div className="bg-black/60 p-3 rounded-none border border-primary/30 hover:border-primary/60 transition-colors">
+                      <div className="text-primary/70 font-electrolize flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-primary/70" />
+                        Total XP Earned
+                      </div>
                       <div className="text-2xl font-bold text-primary font-orbitron">
                         {completedWorkouts.reduce((total, w) => total + w.xpReward, 0)}
                       </div>
                     </div>
-                    <div className="bg-black/60 p-3 rounded-none border border-primary/30">
-                      <div className="text-primary/70 font-electrolize">Streak</div>
+                    <div className="bg-black/60 p-3 rounded-none border border-primary/30 hover:border-primary/60 transition-colors">
+                      <div className="text-primary/70 font-electrolize flex items-center gap-2">
+                        <Flame className="w-4 h-4 text-primary/70" />
+                        Streak
+                      </div>
                       <div className="text-2xl font-bold text-primary font-orbitron">
                         {(() => {
                           let streak = 0
@@ -790,81 +1011,93 @@ export function WorkoutPage({ player, setPlayer }: WorkoutPageProps) {
       </Tabs>
 
       {/* Active Workout Modal */}
-      {showWorkoutModal && activeWorkout && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="max-w-md w-full mx-4 bg-black/90 border border-primary/30 shadow-[0_0_15px_rgba(0,168,255,0.3)] p-6 rounded-none">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-primary font-michroma">{activeWorkout.name}</h3>
-              <Button
-                onClick={failWorkout}
-                className="p-1 bg-black/60 hover:bg-red-900/30 text-primary/70 hover:text-red-400 rounded-none border border-primary/30"
-              >
-                <X className="w-5 h-5" />
-              </Button>
-            </div>
-
-            <div className="mb-4">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-primary/70 text-sm font-michroma">Progress</span>
-                <span className="text-primary/70 text-sm font-orbitron">
-                  {currentExerciseIndex + 1}/{activeWorkout.exercises.length}
-                </span>
-              </div>
-              <div className="progress-bar">
-                <div className="progress-fill" style={{ width: `${workoutProgress}%` }}></div>
-              </div>
-            </div>
-
-            <div className="bg-black/60 p-4 rounded-none border border-primary/30 mb-4">
-              <h4 className="text-lg font-semibold text-primary font-michroma mb-2">
-                {activeWorkout.exercises[currentExerciseIndex].name}
-              </h4>
-              <p className="text-primary/60 mb-3 font-electrolize">
-                {activeWorkout.exercises[currentExerciseIndex].description}
-              </p>
-
-              {activeWorkout.exercises[currentExerciseIndex].sets && (
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-primary/70 font-electrolize">Sets</span>
-                  <span className="text-primary font-orbitron">
-                    {activeWorkout.exercises[currentExerciseIndex].sets}
-                  </span>
-                </div>
-              )}
-
-              {activeWorkout.exercises[currentExerciseIndex].reps && (
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-primary/70 font-electrolize">Reps</span>
-                  <span className="text-primary font-orbitron">
-                    {activeWorkout.exercises[currentExerciseIndex].reps}
-                  </span>
-                </div>
-              )}
-
-              {activeWorkout.exercises[currentExerciseIndex].duration && (
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-primary/70 font-electrolize">Duration</span>
-                  <span className="text-primary font-orbitron">{formatTime(remainingTime)}</span>
-                </div>
-              )}
-
-              <div className="flex justify-between items-center">
-                <span className="text-primary/70 font-electrolize">Target</span>
-                <span className="text-primary font-orbitron">
-                  {activeWorkout.exercises[currentExerciseIndex].muscleTargets.join(", ")}
-                </span>
-              </div>
-            </div>
-
-            <Button
-              onClick={completeExercise}
-              className="w-full py-3 bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary font-michroma"
+      <AnimatePresence>
+        {showWorkoutModal && activeWorkout && (
+          <motion.div
+            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="max-w-md w-full mx-4 bg-black/90 border border-primary/30 shadow-[0_0_15px_rgba(0,168,255,0.3)] p-6 rounded-none"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
             >
-              COMPLETE {currentExerciseIndex === activeWorkout.exercises.length - 1 ? "WORKOUT" : "EXERCISE"}
-            </Button>
-          </div>
-        </div>
-      )}
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-primary font-michroma">{activeWorkout.name}</h3>
+                <Button
+                  onClick={failWorkout}
+                  className="p-1 bg-black/60 hover:bg-red-900/30 text-primary/70 hover:text-red-400 rounded-none border border-primary/30"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-primary/70 text-sm font-michroma">Progress</span>
+                  <span className="text-primary/70 text-sm font-orbitron">
+                    {currentExerciseIndex + 1}/{activeWorkout.exercises.length}
+                  </span>
+                </div>
+                <div className="progress-bar">
+                  <div className="progress-fill" style={{ width: `${workoutProgress}%` }}></div>
+                </div>
+              </div>
+
+              <div className="bg-black/60 p-4 rounded-none border border-primary/30 mb-4">
+                <h4 className="text-lg font-semibold text-primary font-michroma mb-2">
+                  {activeWorkout.exercises[currentExerciseIndex].name}
+                </h4>
+                <p className="text-primary/60 mb-3 font-electrolize">
+                  {activeWorkout.exercises[currentExerciseIndex].description}
+                </p>
+
+                {activeWorkout.exercises[currentExerciseIndex].sets && (
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-primary/70 font-electrolize">Sets</span>
+                    <span className="text-primary font-orbitron">
+                      {activeWorkout.exercises[currentExerciseIndex].sets}
+                    </span>
+                  </div>
+                )}
+
+                {activeWorkout.exercises[currentExerciseIndex].reps && (
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-primary/70 font-electrolize">Reps</span>
+                    <span className="text-primary font-orbitron">
+                      {activeWorkout.exercises[currentExerciseIndex].reps}
+                    </span>
+                  </div>
+                )}
+
+                {activeWorkout.exercises[currentExerciseIndex].duration && (
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-primary/70 font-electrolize">Duration</span>
+                    <span className="text-primary font-orbitron">{formatTime(remainingTime)}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center">
+                  <span className="text-primary/70 font-electrolize">Target</span>
+                  <span className="text-primary font-orbitron">
+                    {activeWorkout.exercises[currentExerciseIndex].muscleTargets.join(", ")}
+                  </span>
+                </div>
+              </div>
+
+              <Button
+                onClick={completeExercise}
+                className="w-full py-3 bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary font-michroma"
+              >
+                COMPLETE {currentExerciseIndex === activeWorkout.exercises.length - 1 ? "WORKOUT" : "EXERCISE"}
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }
@@ -872,24 +1105,24 @@ export function WorkoutPage({ player, setPlayer }: WorkoutPageProps) {
 function getMuscleRankColor(rank: MuscleRank): string {
   switch (rank) {
     case "SSS":
-      return "bg-purple-900 text-purple-100"
+      return "bg-purple-900/50 text-purple-100"
     case "SS":
-      return "bg-purple-700 text-purple-100"
+      return "bg-purple-700/50 text-purple-100"
     case "S":
-      return "bg-blue-700 text-blue-100"
+      return "bg-blue-700/50 text-blue-100"
     case "A":
-      return "bg-green-700 text-green-100"
+      return "bg-green-700/50 text-green-100"
     case "B":
-      return "bg-yellow-700 text-yellow-100"
+      return "bg-yellow-700/50 text-yellow-100"
     case "C":
-      return "bg-orange-700 text-orange-100"
+      return "bg-orange-700/50 text-orange-100"
     case "D":
-      return "bg-cyan-700 text-cyan-100"
+      return "bg-cyan-700/50 text-cyan-100"
     case "E":
-      return "bg-gray-700 text-gray-100"
+      return "bg-gray-700/50 text-gray-100"
     case "F":
-      return "bg-gray-800 text-gray-100"
+      return "bg-gray-800/50 text-gray-100"
     default:
-      return "bg-gray-900 text-gray-100"
+      return "bg-gray-900/50 text-gray-100"
   }
 }

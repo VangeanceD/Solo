@@ -68,10 +68,58 @@ const config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        float: {
+          "0%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-10px)" },
+          "100%": { transform: "translateY(0px)" },
+        },
+        "pulse-glow": {
+          "0%": { boxShadow: "0 0 5px rgba(0, 168, 255, 0.3)" },
+          "50%": { boxShadow: "0 0 25px rgba(0, 168, 255, 0.7)" },
+          "100%": { boxShadow: "0 0 5px rgba(0, 168, 255, 0.3)" },
+        },
+        "pulse-slow": {
+          "0%": { opacity: "0.3" },
+          "50%": { opacity: "0.6" },
+          "100%": { opacity: "0.3" },
+        },
+        "border-glow": {
+          "0%": {
+            borderColor: "rgba(0, 168, 255, 0.3)",
+            boxShadow: "0 0 15px rgba(0, 168, 255, 0.3)",
+          },
+          "50%": {
+            borderColor: "rgba(0, 168, 255, 0.6)",
+            boxShadow: "0 0 25px rgba(0, 168, 255, 0.6)",
+          },
+          "100%": {
+            borderColor: "rgba(0, 168, 255, 0.3)",
+            boxShadow: "0 0 15px rgba(0, 168, 255, 0.3)",
+          },
+        },
+        "scan-effect": {
+          "0%": { top: "-100%" },
+          "100%": { top: "100%" },
+        },
+        rotate: {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(360deg)" },
+        },
+        pulse: {
+          "0%": { opacity: "0.2", transform: "scale(1)" },
+          "50%": { opacity: "0.8", transform: "scale(1.5)" },
+          "100%": { opacity: "0.2", transform: "scale(1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        float: "float 3s ease-in-out infinite",
+        "pulse-glow": "pulse-glow 3s ease-in-out infinite",
+        "pulse-slow": "pulse-slow 5s ease-in-out infinite",
+        "border-glow": "border-glow 3s ease-in-out infinite",
+        "scan-effect": "scan-effect 8s ease-in-out infinite",
+        rotate: "rotate 10s linear infinite",
       },
     },
   },
