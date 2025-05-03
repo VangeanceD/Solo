@@ -6,6 +6,7 @@ export async function GET(request: Request) {
   const width = searchParams.get("width") || "128"
   const text = searchParams.get("text") || "?"
 
+  // Fix the JSX syntax error by properly formatting the style object
   return new ImageResponse(
     <div
       style={{

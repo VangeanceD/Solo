@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { generatePlaceholderImage } from "@/lib/image-utils"
 
 interface AvatarImageProps {
   src: string
@@ -27,7 +26,7 @@ export function AvatarImage({ src, alt, fallbackText, width = 128, height = 128,
 
   const handleError = () => {
     setHasError(true)
-    setImgSrc(generatePlaceholderImage(fallbackText, width, height))
+    setImgSrc(`/api/placeholder?height=${width}&width=${height}&text=${encodeURIComponent(fallbackText)}`)
   }
 
   return (

@@ -14,7 +14,7 @@ export async function checkImageExists(url: string): Promise<boolean> {
 
 // Generate a placeholder image URL with text
 export function generatePlaceholderImage(text: string, width = 128, height = 128): string {
-  return `/placeholder.svg?height=${height}&width=${width}&text=${encodeURIComponent(text)}`
+  return `/api/placeholder?height=${height}&width=${width}&text=${encodeURIComponent(text)}`
 }
 
 // Get a fallback image URL if the original fails to load

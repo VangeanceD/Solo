@@ -142,10 +142,10 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
   }
 
   // Function to get fallback image URL
-  const getImageUrl = (avatar: { id: string; image: string }) => {
+  const getImageUrl = (avatar: { id: string; image: string; name: string }) => {
     if (imageErrors[avatar.id]) {
       // Fallback to a placeholder if the image fails to load
-      return `/placeholder.svg?height=80&width=80&text=${avatar.name}`
+      return `/api/placeholder?height=80&width=80&text=${encodeURIComponent(avatar.name)}`
     }
     return avatar.image
   }
@@ -203,7 +203,7 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
         const updatedPlayer = { ...player }
         updatedPlayer.xp -= avatar.cost
         updatedPlayer.profilePicture = imageErrors[avatarId]
-          ? `/placeholder.svg?height=128&width=128&text=${avatar.name}`
+          ? `/api/placeholder?height=128&width=128&text=${avatar.name}`
           : avatar.image
 
         // Add a special quote as a title if they don't have it yet
@@ -336,7 +336,7 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
 
   // Function to create default avatar images
   const createDefaultAvatar = (name: string) => {
-    return `/placeholder.svg?height=80&width=80&text=${name}`
+    return `/api/placeholder?height=80&width=80&text=${encodeURIComponent(name)}`
   }
 
   return (
@@ -360,7 +360,7 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
                 <div className="w-32 h-32 rounded-full bg-primary/20 flex items-center justify-center mb-4 animate-pulse-glow overflow-hidden border-2 border-primary">
                   {player.profilePicture ? (
                     <Image
-                      src={player.profilePicture || "/placeholder.svg"}
+                      src={player.profilePicture || "/api/placeholder"}
                       alt="Profile"
                       width={128}
                       height={128}
@@ -368,7 +368,7 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
                       onError={() => {
                         // If profile picture fails to load, use first letter of name
                         const updatedPlayer = { ...player }
-                        updatedPlayer.profilePicture = `/placeholder.svg?height=128&width=128&text=${player.name.charAt(0).toUpperCase()}`
+                        updatedPlayer.profilePicture = `/api/placeholder?height=128&width=128&text=${player.name.charAt(0).toUpperCase()}`
                         setPlayer(updatedPlayer)
                       }}
                     />
@@ -422,7 +422,7 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
                       <div className="flex flex-col items-center">
                         <div className="w-20 h-20 rounded-full overflow-hidden mb-2 border border-primary/50">
                           <Image
-                            src={getImageUrl(avatar) || "/placeholder.svg"}
+                            src={getImageUrl(avatar) || "/api/placeholder"}
                             alt={avatar.name}
                             width={80}
                             height={80}
@@ -490,7 +490,7 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
                     >
                       {uploadedImage ? (
                         <Image
-                          src={uploadedImage || "/placeholder.svg"}
+                          src={uploadedImage || "/api/placeholder"}
                           alt="Uploaded"
                           width={128}
                           height={128}
