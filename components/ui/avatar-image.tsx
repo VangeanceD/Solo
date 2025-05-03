@@ -26,7 +26,7 @@ export function AvatarImage({ src, alt, fallbackText, width = 128, height = 128,
 
   const handleError = () => {
     setHasError(true)
-    setImgSrc(`/api/placeholder?height=${width}&width=${height}&text=${encodeURIComponent(fallbackText)}`)
+    setImgSrc(`/api/placeholder?height=${height}&width=${width}&text=${encodeURIComponent(fallbackText)}`)
   }
 
   return (
@@ -37,7 +37,7 @@ export function AvatarImage({ src, alt, fallbackText, width = 128, height = 128,
         </div>
       )}
       <Image
-        src={imgSrc || "/placeholder.svg"}
+        src={imgSrc || `/api/placeholder?height=${height}&width=${width}`}
         alt={alt}
         width={width}
         height={height}

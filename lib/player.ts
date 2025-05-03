@@ -313,7 +313,7 @@ export function createDefaultPlayer(name: string): Player {
       animations: true,
       notifications: true,
     },
-    profilePicture: "/placeholder.svg?height=200&width=200",
+    profilePicture: "/api/placeholder?height=200&width=200",
     lastDailyReset: now.getTime(),
     nextDailyReset: tomorrow.getTime(),
     coins: 0,
