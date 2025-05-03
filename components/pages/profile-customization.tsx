@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import type { Player } from "@/lib/player"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -132,8 +132,33 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null)
   const [selectedTitle, setSelectedTitle] = useState<string | null>(null)
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { showNotification } = useNotification()
+
+  // Function to handle image loading errors
+  const handleImageError = (avatarId: string) => {
+    setImageErrors((prev) => ({ ...prev, [avatarId]: true }))
+  }
+
+  // Function to get fallback image URL
+  const getImageUrl = (avatar: { id: string; image: string }) => {
+    if (imageErrors[avatar.id]) {
+      // Fallback to a placeholder if the image fails to load
+      return `/placeholder.svg?height=80&width=80&text=${avatar.name}`
+    }
+    return avatar.image
+  }
+
+  // Check if images exist on component mount
+  useEffect(() => {
+    // Preload images to check if they exist
+    animeProfiles.forEach((avatar) => {
+      const img = new Image()
+      img.src = avatar.image
+      img.onerror = () => handleImageError(avatar.id)
+    })
+  }, [])
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -177,7 +202,9 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
       onConfirm: () => {
         const updatedPlayer = { ...player }
         updatedPlayer.xp -= avatar.cost
-        updatedPlayer.profilePicture = avatar.image
+        updatedPlayer.profilePicture = imageErrors[avatarId]
+          ? `/placeholder.svg?height=128&width=128&text=${avatar.name}`
+          : avatar.image
 
         // Add a special quote as a title if they don't have it yet
         if (!updatedPlayer.titles.includes(avatar.quote)) {
@@ -307,6 +334,11 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
     })
   }
 
+  // Function to create default avatar images
+  const createDefaultAvatar = (name: string) => {
+    return `/placeholder.svg?height=80&width=80&text=${name}`
+  }
+
   return (
     <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
       <Card className="bg-black/80 backdrop-blur-lg p-6 rounded-none border border-primary/30 shadow-[0_0_15px_rgba(0,168,255,0.3)] cyberpunk-border holographic-ui">
@@ -333,6 +365,12 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
                       width={128}
                       height={128}
                       className="w-full h-full object-cover rounded-full"
+                      onError={() => {
+                        // If profile picture fails to load, use first letter of name
+                        const updatedPlayer = { ...player }
+                        updatedPlayer.profilePicture = `/placeholder.svg?height=128&width=128&text=${player.name.charAt(0).toUpperCase()}`
+                        setPlayer(updatedPlayer)
+                      }}
                     />
                   ) : (
                     <span className="text-5xl font-bold text-primary solo-text font-michroma">
@@ -384,11 +422,12 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
                       <div className="flex flex-col items-center">
                         <div className="w-20 h-20 rounded-full overflow-hidden mb-2 border border-primary/50">
                           <Image
-                            src={avatar.image || "/placeholder.svg"}
+                            src={getImageUrl(avatar) || "/placeholder.svg"}
                             alt={avatar.name}
                             width={80}
                             height={80}
                             className="w-full h-full object-cover rounded-full"
+                            onError={() => handleImageError(avatar.id)}
                           />
                         </div>
                         <h4 className="text-primary font-michroma text-center">{avatar.name}</h4>
@@ -407,11 +446,12 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
                     <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
                       <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-primary">
                         <Image
-                          src={animeProfiles.find((a) => a.id === selectedAvatar)?.image || ""}
+                          src={getImageUrl(animeProfiles.find((a) => a.id === selectedAvatar) || animeProfiles[0])}
                           alt="Selected Avatar"
                           width={96}
                           height={96}
                           className="w-full h-full object-cover rounded-full"
+                          onError={() => selectedAvatar && handleImageError(selectedAvatar)}
                         />
                       </div>
                       <div className="flex-1">
@@ -425,7 +465,7 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
                           From {animeProfiles.find((a) => a.id === selectedAvatar)?.series}
                         </p>
                         <Button
-                          onClick={() => applyAvatar(selectedAvatar)}
+                          onClick={() => selectedAvatar && applyAvatar(selectedAvatar)}
                           className="mt-3 px-4 py-2 bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary font-michroma"
                         >
                           APPLY ({animeProfiles.find((a) => a.id === selectedAvatar)?.cost} XP)

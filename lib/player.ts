@@ -324,3 +324,5 @@ export function createDefaultPlayer(name: string): Player {
     activeEffects: [],
   }
 }
+
+export const defaultPlayer = createDefaultPlayer("Hunter")
