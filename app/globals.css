@@ -1,5 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Syncopate:wght@400;700&family=Cinzel:wght@400;500;600;700;800;900&family=Audiowide&family=Electrolize&family=Michroma&display=swap");
-
+/* Remove the Google Fonts import and use CSS variables instead */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -54,31 +53,31 @@
 
 @layer components {
   .font-rajdhani {
-    font-family: "Rajdhani", sans-serif;
+    font-family: var(--font-rajdhani), system-ui, sans-serif;
   }
 
   .font-orbitron {
-    font-family: "Orbitron", sans-serif;
+    font-family: var(--font-orbitron), system-ui, sans-serif;
   }
 
   .font-syncopate {
-    font-family: "Syncopate", sans-serif;
+    font-family: system-ui, sans-serif;
   }
 
   .font-cinzel {
-    font-family: "Cinzel", serif;
+    font-family: serif;
   }
 
   .font-audiowide {
-    font-family: "Audiowide", cursive;
+    font-family: var(--font-audiowide), system-ui, sans-serif;
   }
 
   .font-electrolize {
-    font-family: "Electrolize", sans-serif;
+    font-family: system-ui, sans-serif;
   }
 
   .font-michroma {
-    font-family: "Michroma", sans-serif;
+    font-family: system-ui, sans-serif;
   }
 
   .glow-text {

@@ -19,6 +19,16 @@ const config = {
       },
     },
     extend: {
+      fontFamily: {
+        rajdhani: ["var(--font-rajdhani)"],
+        orbitron: ["var(--font-orbitron)"],
+        audiowide: ["var(--font-audiowide)"],
+        // Use system fonts as fallbacks for the other fonts
+        syncopate: ["system-ui", "sans-serif"],
+        cinzel: ["serif"],
+        electrolize: ["system-ui", "sans-serif"],
+        michroma: ["system-ui", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

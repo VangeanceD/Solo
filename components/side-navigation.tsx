@@ -1,10 +1,10 @@
 "use client"
 
-import type { Player } from "@/lib/player"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { User, Calendar, Sword, Gift, Backpack, PlusCircle, Settings, LogOut, UserCircle, Dumbbell } from "lucide-react"
 import { motion } from "framer-motion"
+import { Home, Calendar, Plus, User, Palette, Package, Gift, Settings, LogOut, Dumbbell, Menu, X } from "lucide-react"
+import type { Player } from "@/lib/player"
 
 interface SideNavigationProps {
   activePage: string
@@ -14,81 +14,126 @@ interface SideNavigationProps {
 }
 
 export function SideNavigation({ activePage, onNavigate, player, onLogout }: SideNavigationProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
+
   const navItems = [
-    { id: "profile", icon: User, label: "Profile" },
-    { id: "customize-profile", icon: UserCircle, label: "Customize" },
-    { id: "daily-quests", icon: Calendar, label: "Daily Quests" },
-    { id: "quests", icon: Sword, label: "Quests" },
-    { id: "workout", icon: Dumbbell, label: "Workout" },
-    { id: "rewards", icon: Gift, label: "Rewards" },
-    { id: "inventory", icon: Backpack, label: "Inventory" },
-    { id: "create-quest", icon: PlusCircle, label: "Create Quest" },
-    { id: "settings", icon: Settings, label: "Settings" },
+    { id: "quests", label: "Quests", icon: <Home className="w-5 h-5" /> },
+    { id: "daily-quests", label: "Daily Missions", icon: <Calendar className="w-5 h-5" /> },
+    { id: "create-quest", label: "Create Quest", icon: <Plus className="w-5 h-5" /> },
+    { id: "profile", label: "Profile", icon: <User className="w-5 h-5" /> },
+    { id: "customize-profile", label: "Customize", icon: <Palette className="w-5 h-5" /> },
+    { id: "inventory", label: "Inventory", icon: <Package className="w-5 h-5" /> },
+    { id: "rewards", label: "Rewards", icon: <Gift className="w-5 h-5" /> },
+    { id: "workout", label: "Workout", icon: <Dumbbell className="w-5 h-5" /> },
+    { id: "settings", label: "Settings", icon: <Settings className="w-5 h-5" /> },
   ]
 
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed)
+  }
+
+  const toggleMobileMenu = () => {
+    setIsMobileOpen(!isMobileOpen)
+  }
+
   return (
-    <div className="w-20 bg-black/80 border-r border-primary/30 flex flex-col items-center py-8 space-y-8 relative z-10">
-      <motion.div
-        className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4 animate-pulse-glow relative"
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.5 }}
+    <>
+      {/* Mobile menu button */}
+      <button
+        onClick={toggleMobileMenu}
+        className="md:hidden fixed top-4 left-4 z-30 p-2 bg-black/50 backdrop-blur-md border border-primary/30 text-primary"
       >
-        {player.profilePicture ? (
-          <Avatar className="w-14 h-14 border border-primary/30">
-            <AvatarImage src={player.profilePicture || "/placeholder.svg"} alt={player.name} className="rounded-full" />
-            <AvatarFallback className="text-2xl font-bold text-primary font-orbitron">
-              {player.name.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-        ) : (
-          <span className="text-2xl font-bold text-primary font-orbitron">{player.name.charAt(0).toUpperCase()}</span>
-        )}
-        <div className="absolute -bottom-1 -right-1 bg-primary text-black w-6 h-6 rounded-full flex items-center justify-center font-bold font-orbitron text-xs border border-black">
-          {player.level}
+        {isMobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+      </button>
+
+      {/* Mobile overlay */}
+      {isMobileOpen && (
+        <div className="md:hidden fixed inset-0 bg-black/70 z-20" onClick={() => setIsMobileOpen(false)}></div>
+      )}
+
+      {/* Sidebar */}
+      <motion.aside
+        initial={false}
+        animate={{
+          width: isCollapsed ? "80px" : "240px",
+          x: isMobileOpen ? 0 : window.innerWidth < 768 ? -240 : 0,
+        }}
+        transition={{ duration: 0.3 }}
+        className={`fixed md:relative top-0 left-0 h-full z-20 bg-black/80 backdrop-blur-lg border-r border-primary/20 flex flex-col`}
+      >
+        <div className="p-4 border-b border-primary/20 flex items-center justify-between">
+          {!isCollapsed && (
+            <motion.h1
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-xl font-bold text-primary font-audiowide glow-text"
+            >
+              ARISE
+            </motion.h1>
+          )}
+          <button onClick={toggleCollapse} className="hidden md:block text-primary/70 hover:text-primary">
+            {isCollapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
+          </button>
         </div>
-      </motion.div>
 
-      {navItems.map((item, index) => (
-        <motion.div
-          key={item.id}
-          initial={{ x: -50, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ duration: 0.3, delay: index * 0.05 }}
-        >
+        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent">
+          <nav className="p-2 space-y-1">
+            {navItems.map((item) => (
+              <Button
+                key={item.id}
+                onClick={() => {
+                  onNavigate(item.id)
+                  if (window.innerWidth < 768) {
+                    setIsMobileOpen(false)
+                  }
+                }}
+                variant="ghost"
+                className={`w-full justify-start py-2 px-3 rounded-none transition-colors ${
+                  activePage === item.id
+                    ? "bg-primary/20 text-primary border-l-2 border-primary"
+                    : "text-white/70 hover:text-white hover:bg-primary/10"
+                }`}
+              >
+                <span className="mr-3">{item.icon}</span>
+                {!isCollapsed && (
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="font-electrolize"
+                  >
+                    {item.label}
+                  </motion.span>
+                )}
+              </Button>
+            ))}
+          </nav>
+        </div>
+
+        <div className="p-2 border-t border-primary/20">
           <Button
+            onClick={onLogout}
             variant="ghost"
-            size="icon"
-            className={`w-12 h-12 rounded-none transition-all duration-300 ${
-              activePage === item.id
-                ? "bg-primary/20 text-primary border-l-2 border-primary"
-                : "text-primary/70 hover:bg-primary/20 hover:text-primary"
-            }`}
-            onClick={() => onNavigate(item.id)}
-            title={item.label}
+            className="w-full justify-start py-2 px-3 rounded-none text-white/70 hover:text-white hover:bg-primary/10 transition-colors"
           >
-            <item.icon className="w-5 h-5" />
+            <span className="mr-3">
+              <LogOut className="w-5 h-5" />
+            </span>
+            {!isCollapsed && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="font-electrolize"
+              >
+                Logout
+              </motion.span>
+            )}
           </Button>
-        </motion.div>
-      ))}
-
-      <div className="flex-grow"></div>
-
-      <motion.div
-        initial={{ x: -50, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.3, delay: navItems.length * 0.05 }}
-      >
-        <Button
-          variant="ghost"
-          size="icon"
-          className="w-12 h-12 rounded-none text-primary/70 hover:bg-primary/20 hover:text-primary"
-          onClick={onLogout}
-          title="Logout"
-        >
-          <LogOut className="w-5 h-5" />
-        </Button>
-      </motion.div>
-    </div>
+        </div>
+      </motion.aside>
+    </>
   )
 }
