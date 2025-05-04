@@ -20,15 +20,66 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
 
   const avatars = [
     { id: "default", src: "/avatars/default.png", name: "Default", cost: 0 },
-    { id: "naruto", src: "/avatars/naruto.png", name: "Naruto", cost: 1000 },
-    { id: "luffy", src: "/avatars/luffy.png", name: "Luffy", cost: 1000 },
-    { id: "goku", src: "/avatars/goku.png", name: "Goku", cost: 1000 },
-    { id: "aizen", src: "/avatars/aizen.png", name: "Aizen", cost: 1500 },
-    { id: "madara", src: "/avatars/madara.png", name: "Madara", cost: 1500 },
-    { id: "allmight", src: "/avatars/allmight.png", name: "All Might", cost: 1500 },
-    { id: "jotaro", src: "/avatars/jotaro.png", name: "Jotaro", cost: 2000 },
-    { id: "gojo", src: "/avatars/gojo.png", name: "Gojo", cost: 2000 },
-    { id: "toji", src: "/avatars/toji.png", name: "Toji Fushiguro", cost: 2000 },
+    {
+      id: "zoro",
+      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-01%20115145-X17b3RGK4k7UQ9iViYQLkJLUnY4pp5.png",
+      name: "Zoro",
+      cost: 1000,
+    },
+    {
+      id: "naruto",
+      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-01%20115033-6lClIZcZoLhwCUM8mSy44f0xgJMDMA.png",
+      name: "Naruto",
+      cost: 1000,
+    },
+    {
+      id: "madara",
+      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-01%20115452-ZTmvHWsgSEEjmvMoF7K56sYsz6HWTN.png",
+      name: "Madara",
+      cost: 1500,
+    },
+    {
+      id: "goku",
+      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-01%20115353-ugxWsBRw387pv3V7stugQ6B8aP9raP.png",
+      name: "Goku",
+      cost: 1500,
+    },
+    {
+      id: "allmight",
+      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-01%20115631-D53jZVDDhvZtk3wjRlvf034Pv9Kiqv.png",
+      name: "All Might",
+      cost: 1500,
+    },
+    {
+      id: "luffy",
+      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-01%20115311-caMxeuENU2iyGhKc2vQtZRBbggnu9W.png",
+      name: "Luffy",
+      cost: 1000,
+    },
+    {
+      id: "aizen",
+      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-01%20123202-f206cSlWYcWXXs4GXMOWoNepjklx4s.png",
+      name: "Aizen",
+      cost: 2000,
+    },
+    {
+      id: "sukuna",
+      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-01%20115854-D1EowuCrRylR0Xt0uzJ7lveF8hRkaP.png",
+      name: "Sukuna",
+      cost: 2000,
+    },
+    {
+      id: "gojo",
+      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-01%20115818-ynZObcME925YPTfLNgx2rKS09fV8Er.png",
+      name: "Gojo",
+      cost: 2000,
+    },
+    {
+      id: "jotaro",
+      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-01%20115720-dxmeetj2yzJPkE7lPN4E4izfdeD19T.png",
+      name: "Jotaro",
+      cost: 2000,
+    },
   ]
 
   const titles = [

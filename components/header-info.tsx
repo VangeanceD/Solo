@@ -20,21 +20,30 @@ export function HeaderInfo({ player }: HeaderInfoProps) {
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 md:gap-8">
-        <div className="flex-1">
-          <h2 className="text-xl font-bold text-primary mb-1 font-michroma">{player.name}</h2>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="bg-primary/20 px-2 py-1 text-primary text-sm font-orbitron level-badge">
-              LVL {player.level}
-            </div>
-            <div className="text-white/70 text-sm font-electrolize">
-              {player.xp} / {player.xpToNextLevel} XP
-            </div>
+        <div className="flex-1 flex items-center">
+          <div className="w-12 h-12 rounded-full overflow-hidden border border-primary/30 mr-4">
+            <img
+              src={player.avatar || "/placeholder.svg?height=48&width=48"}
+              alt="Avatar"
+              className="w-full h-full object-cover"
+            />
           </div>
+          <div>
+            <h2 className="text-xl font-bold text-primary mb-1 font-michroma">{player.name}</h2>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="bg-primary/20 px-2 py-1 text-primary text-sm font-orbitron level-badge">
+                LVL {player.level}
+              </div>
+              <div className="text-white/70 text-sm font-electrolize">
+                {player.xp} / {player.xpToNextLevel} XP
+              </div>
+            </div>
 
-          <div className="mb-4">
-            <Progress value={xpPercentage} className="progress-bar h-2">
-              <div className="progress-fill h-full" style={{ width: `${xpPercentage}%` }}></div>
-            </Progress>
+            <div className="mb-4">
+              <Progress value={xpPercentage} className="progress-bar h-2">
+                <div className="progress-fill h-full" style={{ width: `${xpPercentage}%` }}></div>
+              </Progress>
+            </div>
           </div>
         </div>
 
