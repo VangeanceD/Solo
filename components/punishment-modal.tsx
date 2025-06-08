@@ -3,17 +3,14 @@
 import { Button } from "@/components/ui/button"
 import { XCircle } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import type { Player } from "@/lib/player"
 
 interface PunishmentModalProps {
   show: boolean
   onClose: () => void
   message: string
-  player: Player
-  setPlayer: (player: Player) => void
 }
 
-export function PunishmentModal({ show, onClose, message, player, setPlayer }: PunishmentModalProps) {
+export function PunishmentModal({ show, onClose, message }: PunishmentModalProps) {
   return (
     <AnimatePresence>
       {show && (

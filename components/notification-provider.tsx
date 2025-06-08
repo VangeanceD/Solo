@@ -1,83 +1,92 @@
 "use client"
 
 import { createContext, useContext, useState, type ReactNode } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { X } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
-interface Notification {
-  id: string
+interface NotificationOptions {
+  title: string
   message: string
-  type: "success" | "error" | "info" | "warning"
+  type?: "info" | "success" | "warning" | "error"
+  confirmText?: string
+  cancelText?: string
+  onConfirm?: () => void
 }
 
 interface NotificationContextType {
-  notifications: Notification[]
-  addNotification: (message: string, type: Notification["type"]) => void
-  removeNotification: (id: string) => void
+  showNotification: (options: NotificationOptions) => void
 }
 
-const NotificationContext = createContext<NotificationContextType | undefined>(undefined)
+const NotificationContext = createContext<NotificationContextType>({
+  showNotification: () => {},
+})
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
-  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [open, setOpen] = useState(false)
+  const [options, setOptions] = useState<NotificationOptions>({
+    title: "",
+    message: "",
+    type: "info",
+    confirmText: "OK",
+    cancelText: "Cancel",
+  })
+  const [callback, setCallback] = useState<(() => void) | undefined>(undefined)
 
-  const addNotification = (message: string, type: Notification["type"] = "info") => {
-    const id = Math.random().toString(36).substring(2, 9)
-    setNotifications((prev) => [...prev, { id, message, type }])
-
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-      removeNotification(id)
-    }, 5000)
+  const showNotification = (opts: NotificationOptions) => {
+    setOptions({
+      ...opts,
+      confirmText: opts.confirmText || "OK",
+      cancelText: opts.cancelText || "Cancel",
+    })
+    setCallback(() => opts.onConfirm)
+    setOpen(true)
   }
 
-  const removeNotification = (id: string) => {
-    setNotifications((prev) => prev.filter((notification) => notification.id !== id))
+  const handleConfirm = () => {
+    setOpen(false)
+    if (callback) {
+      callback()
+      setCallback(undefined)
+    }
   }
 
   return (
-    <NotificationContext.Provider value={{ notifications, addNotification, removeNotification }}>
+    <NotificationContext.Provider value={{ showNotification }}>
       {children}
-      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-md">
-        <AnimatePresence>
-          {notifications.map((notification) => (
-            <motion.div
-              key={notification.id}
-              initial={{ opacity: 0, y: -20, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.9 }}
-              transition={{ duration: 0.2 }}
-              className={`p-4 rounded-none border shadow-lg backdrop-blur-lg ${
-                notification.type === "success"
-                  ? "bg-green-900/80 border-green-500/50 text-green-100"
-                  : notification.type === "error"
-                    ? "bg-red-900/80 border-red-500/50 text-red-100"
-                    : notification.type === "warning"
-                      ? "bg-amber-900/80 border-amber-500/50 text-amber-100"
-                      : "bg-primary/10 border-primary/30 text-primary"
-              }`}
+
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogContent className="holographic-ui">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-michroma text-primary">{options.title}</AlertDialogTitle>
+            <AlertDialogDescription className="font-electrolize text-white/80">
+              {options.message}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            {callback && (
+              <AlertDialogCancel className="font-michroma bg-black/60 hover:bg-black/80 text-primary/70 hover:text-primary rounded-none border border-primary/30">
+                {options.cancelText}
+              </AlertDialogCancel>
+            )}
+            <AlertDialogAction
+              onClick={handleConfirm}
+              className="font-michroma bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 btn-primary"
             >
-              <div className="flex justify-between items-start">
-                <p className="font-electrolize">{notification.message}</p>
-                <button
-                  onClick={() => removeNotification(notification.id)}
-                  className="ml-4 text-white/70 hover:text-white"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
+              {options.confirmText}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </NotificationContext.Provider>
   )
 }
 
-export function useNotification() {
-  const context = useContext(NotificationContext)
-  if (context === undefined) {
-    throw new Error("useNotification must be used within a NotificationProvider")
-  }
-  return context
-}
+export const useNotification = () => useContext(NotificationContext)

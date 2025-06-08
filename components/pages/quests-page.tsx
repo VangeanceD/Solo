@@ -1,143 +1,129 @@
 "use client"
 
-import { useState } from "react"
+import type { Player, Quest, DailyQuest } from "@/lib/player"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Clock, Star, ArrowRight, CheckCircle } from "lucide-react"
-import type { Player, Quest } from "@/lib/player"
+import { Plus, Star, Timer, Dumbbell, Brain, Heart, List } from "lucide-react"
+import { motion } from "framer-motion"
+import { useRouter } from "next/navigation"
 
 interface QuestsPageProps {
   player: Player
-  activeQuest: any
+  activeQuest: (Quest | DailyQuest) | null
   onStartQuest: (quest: Quest) => void
   onCompleteQuest: () => void
   onCancelQuest: () => void
 }
 
 export function QuestsPage({ player, activeQuest, onStartQuest, onCompleteQuest, onCancelQuest }: QuestsPageProps) {
-  const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null)
+  const router = useRouter()
 
-  const handleSelectQuest = (quest: Quest) => {
-    setSelectedQuest(quest)
+  // Group quests by category
+  const categories = {
+    physical: { icon: Dumbbell, name: "Physical" },
+    mental: { icon: Brain, name: "Mental" },
+    health: { icon: Heart, name: "Health" },
+    other: { icon: List, name: "Other" },
   }
 
-  const handleStartQuest = () => {
-    if (selectedQuest) {
-      onStartQuest(selectedQuest)
-      setSelectedQuest(null)
+  const questsByCategory: Record<string, Quest[]> = {}
+
+  player.quests.forEach((quest) => {
+    const category = quest.category || "other"
+    if (!questsByCategory[category]) {
+      questsByCategory[category] = []
     }
-  }
-
-  const activeQuestId = activeQuest?.id
+    questsByCategory[category].push(quest)
+  })
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-primary font-audiowide glow-text">QUESTS</h1>
+    <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-primary glow-text solo-text font-audiowide">Available Quests</h2>
+        <Button
+          onClick={() => router.push("/create-quest")}
+          className="px-4 py-2 bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider flex items-center space-x-2 btn-primary"
+        >
+          <Plus className="w-4 h-4" />
+          <span>NEW QUEST</span>
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {player.quests.map((quest) => (
-          <Card
-            key={quest.id}
-            className={`quest-card border border-primary/30 bg-black/60 backdrop-blur-md ${
-              quest.completed
-                ? "border-green-500/30 bg-green-900/10"
-                : activeQuestId === quest.id
-                  ? "border-amber-500/30 bg-amber-900/10"
-                  : selectedQuest?.id === quest.id
-                    ? "border-primary/50 bg-primary/10"
-                    : ""
-            }`}
-            onClick={() => !quest.completed && activeQuestId !== quest.id && handleSelectQuest(quest)}
+      {Object.entries(questsByCategory).map(([category, quests], categoryIndex) => {
+        if (quests.filter((q) => !q.completed).length === 0) return null
+
+        const categoryInfo = categories[category as keyof typeof categories] || categories.other
+        const CategoryIcon = categoryInfo.icon
+
+        return (
+          <motion.div
+            key={category}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: categoryIndex * 0.1 }}
           >
-            <CardContent className="p-4">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-lg font-semibold text-primary font-michroma">{quest.title}</h3>
-                <div className="flex items-center space-x-1">
-                  <Star className="w-4 h-4 text-primary/70" />
-                  <span className="text-primary/70 font-orbitron">{quest.xp}</span>
+            <Card className="bg-black/80 backdrop-blur-lg p-6 rounded-none border border-primary/30 shadow-[0_0_15px_rgba(0,168,255,0.3)] cyberpunk-border mt-4 holographic-ui">
+              <div className="holographic-header">
+                <div className="flex items-center space-x-2">
+                  <CategoryIcon className="text-primary w-5 h-5" />
+                  <span className="font-michroma">{categoryInfo.name} Quests</span>
                 </div>
               </div>
-              <p className="text-white/70 mb-4 text-sm font-electrolize">{quest.description}</p>
-              <div className="flex justify-between items-center">
-                <div className="flex items-center space-x-1 text-white/50 text-sm">
-                  <Clock className="w-4 h-4" />
-                  <span>{quest.timeLimit} min</span>
-                </div>
-                {quest.completed ? (
-                  <div className="flex items-center text-green-500 text-sm">
-                    <CheckCircle className="w-4 h-4 mr-1" />
-                    <span>Completed</span>
-                  </div>
-                ) : activeQuestId === quest.id ? (
-                  <div className="text-amber-500 text-sm">In Progress</div>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-primary/70 hover:text-primary"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleSelectQuest(quest)
-                    }}
-                  >
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {selectedQuest && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-40 p-4">
-          <div className="max-w-md w-full bg-black/90 border border-primary/30 p-6 animate-border-glow cyberpunk-border holographic-ui">
-            <div className="holographic-header">Quest Details</div>
-            <h2 className="text-2xl font-bold text-primary mb-2 font-michroma">{selectedQuest.title}</h2>
-            <p className="text-white/70 mb-4 font-electrolize">{selectedQuest.description}</p>
-
-            <div className="space-y-4 mb-6">
-              <div className="flex justify-between items-center">
-                <span className="text-white/70 font-electrolize">Time Limit</span>
-                <span className="text-primary font-orbitron">{selectedQuest.timeLimit} minutes</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-white/70 font-electrolize">XP Reward</span>
-                <span className="text-primary font-orbitron">{selectedQuest.xp} XP</span>
-              </div>
-              <div className="space-y-2">
-                <div className="text-white/70 font-electrolize">Stat Increases:</div>
-                <div className="grid grid-cols-2 gap-2">
-                  {Object.entries(selectedQuest.statIncreases).map(([stat, value]) => (
-                    <div key={stat} className="flex justify-between items-center">
-                      <span className="text-white/70 font-electrolize capitalize">{stat}</span>
-                      <span className="text-primary font-orbitron">+{value}</span>
-                    </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {quests
+                  .filter((q) => !q.completed)
+                  .map((quest, index) => (
+                    <motion.div
+                      key={quest.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: categoryIndex * 0.1 + index * 0.05 }}
+                      className="bg-black/60 p-4 rounded-none border border-primary/30 quest-card holographic-ui"
+                    >
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-semibold text-primary font-michroma">{quest.title}</h3>
+                        <div className="flex items-center space-x-2">
+                          <Star className="w-4 h-4 text-primary/70" />
+                          <span className="text-primary/70 font-orbitron">{quest.xp} XP</span>
+                        </div>
+                      </div>
+                      <p className="text-primary/60 mt-2 font-electrolize">{quest.description}</p>
+                      <div className="flex flex-wrap items-center mt-2 space-x-3">
+                        <div className="flex items-center">
+                          <Timer className="text-primary/70 w-4 h-4 mr-1" />
+                          <span className="text-primary/60 font-orbitron">{quest.timeLimit} min</span>
+                        </div>
+                        {quest.stats && (
+                          <div className="flex items-center space-x-1">
+                            {quest.stats.map((stat) => (
+                              <span
+                                key={stat}
+                                className="px-2 py-0.5 bg-primary/10 text-primary/70 rounded-none text-xs font-electrolize"
+                              >
+                                {stat}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        onClick={() => onStartQuest(quest)}
+                        className={`mt-4 w-full py-2 rounded-none border transition-colors tracking-wider btn-primary ${
+                          activeQuest
+                            ? "bg-gray-800/50 text-gray-500 border-gray-700 cursor-not-allowed"
+                            : "bg-primary/20 hover:bg-primary/30 text-primary border-primary/30"
+                        }`}
+                        disabled={!!activeQuest}
+                      >
+                        {activeQuest ? "QUEST IN PROGRESS" : "START QUEST"}
+                      </Button>
+                    </motion.div>
                   ))}
-                </div>
               </div>
-            </div>
-
-            <div className="flex space-x-3">
-              <Button
-                onClick={handleStartQuest}
-                className="flex-1 py-2 bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary"
-              >
-                START QUEST
-              </Button>
-              <Button
-                onClick={() => setSelectedQuest(null)}
-                variant="ghost"
-                className="py-2 px-4 bg-black/60 hover:bg-black/80 text-primary/70 hover:text-primary rounded-none border border-primary/30 transition-colors"
-              >
-                CANCEL
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+            </Card>
+          </motion.div>
+        )
+      })}
+    </motion.div>
   )
 }

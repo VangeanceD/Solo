@@ -10,7 +10,7 @@ import { useLocalStorage } from "@/hooks/use-local-storage"
 import { NotificationProvider } from "@/components/notification-provider"
 import { LevelUpProvider } from "@/components/level-up-provider"
 
-export default function Page() {
+export default function Home() {
   const [introCompleted, setIntroCompleted] = useState(false)
   const [player, setPlayer] = useLocalStorage<Player | null>("player", null)
   const [showIntro, setShowIntro] = useState(true)
