@@ -43,6 +43,18 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
 
   const handleStartQuest = (quest: Quest | DailyQuest) => {
     try {
+      // Validate quest object
+      if (!quest || !quest.id || !quest.title) {
+        addNotification("Invalid quest data", "error")
+        return
+      }
+
+      // Check if there's already an active quest
+      if (activeQuest) {
+        addNotification("You already have an active quest. Complete it first!", "warning")
+        return
+      }
+
       setActiveQuest(quest)
       setTimeRemaining(quest.timeLimit * 60) // Convert minutes to seconds
       addNotification(`Started: ${quest.title}`, "info")
