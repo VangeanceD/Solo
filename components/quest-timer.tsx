@@ -60,22 +60,41 @@ export function QuestTimer({
   const isWarningTime = percentRemaining < 50 && percentRemaining >= 25
 
   const handleCompleteQuest = () => {
-    if (player && setPlayer) {
+    if (!player || !setPlayer) {
+      onComplete()
+      return
+    }
+
+    try {
       const oldLevel = player.level
+      const oldXP = player.xp
+
+      // Calculate new XP
+      const newXP = oldXP + quest.xp
+
+      // Calculate new level (simple formula: level = floor(xp / 100) + 1)
+      const newLevel = Math.floor(newXP / 100) + 1
 
       // Update quest as completed
-      const updatedQuests = player.quests.map((q) => (q.id === quest.id ? { ...q, completed: true } : q))
+      let updatedQuests = player.quests
+      if ("statIncreases" in quest) {
+        updatedQuests = player.quests.map((q) => (q.id === quest.id ? { ...q, completed: true } : q))
+      }
 
-      // Calculate new XP and level
-      const newXP = player.xp + quest.xp
-      const newLevel = Math.floor(newXP / player.xpToNextLevel) + 1
+      // Update daily quests if it's a daily quest
+      let updatedDailyQuests = player.dailyQuests
+      if ("penalty" in quest) {
+        updatedDailyQuests = player.dailyQuests.map((q) => (q.id === quest.id ? { ...q, completed: true } : q))
+      }
 
-      // Add XP and stat increases
+      // Create updated player
       const updatedPlayer = {
         ...player,
         quests: updatedQuests,
+        dailyQuests: updatedDailyQuests,
         xp: newXP,
         level: newLevel,
+        xpToNextLevel: newLevel * 100, // Next level threshold
       }
 
       // Add stat increases if it's a regular quest
@@ -84,7 +103,7 @@ export function QuestTimer({
         const statIncreases: Record<string, number> = {}
 
         Object.entries(quest.statIncreases).forEach(([stat, increase]) => {
-          if (stat in newStats) {
+          if (stat in newStats && increase) {
             newStats[stat as keyof typeof newStats] += increase
             statIncreases[stat] = increase
           }
@@ -99,6 +118,9 @@ export function QuestTimer({
 
       setPlayer(updatedPlayer)
       addNotification(`Quest completed! +${quest.xp} XP`, "success")
+    } catch (error) {
+      console.error("Error completing quest:", error)
+      addNotification("Error completing quest", "error")
     }
 
     onComplete()

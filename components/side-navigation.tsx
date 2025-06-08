@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import { Home, Calendar, Plus, User, Palette, Package, Gift, Settings, LogOut, Menu, X } from "lucide-react"
@@ -16,12 +16,23 @@ interface SideNavigationProps {
 export function SideNavigation({ activePage, onNavigate, player, onLogout }: SideNavigationProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
 
   const navItems = [
+    { id: "profile", label: "Profile", icon: <User className="w-5 h-5" /> },
     { id: "quests", label: "Quests", icon: <Home className="w-5 h-5" /> },
     { id: "daily-quests", label: "Daily Missions", icon: <Calendar className="w-5 h-5" /> },
     { id: "create-quest", label: "Create Quest", icon: <Plus className="w-5 h-5" /> },
-    { id: "profile", label: "Profile", icon: <User className="w-5 h-5" /> },
     { id: "customize-profile", label: "Customize", icon: <Palette className="w-5 h-5" /> },
     { id: "inventory", label: "Inventory", icon: <Package className="w-5 h-5" /> },
     { id: "rewards", label: "Rewards", icon: <Gift className="w-5 h-5" /> },
@@ -36,18 +47,31 @@ export function SideNavigation({ activePage, onNavigate, player, onLogout }: Sid
     setIsMobileOpen(!isMobileOpen)
   }
 
+  const handleNavigate = (pageId: string) => {
+    try {
+      onNavigate(pageId)
+      if (isMobile) {
+        setIsMobileOpen(false)
+      }
+    } catch (error) {
+      console.error("Navigation error:", error)
+    }
+  }
+
   return (
     <>
       {/* Mobile menu button */}
-      <button
-        onClick={toggleMobileMenu}
-        className="md:hidden fixed top-4 left-4 z-30 p-2 bg-black/50 backdrop-blur-md border border-primary/30 text-primary"
-      >
-        {isMobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-      </button>
+      {isMobile && (
+        <button
+          onClick={toggleMobileMenu}
+          className="md:hidden fixed top-4 left-4 z-30 p-2 bg-black/50 backdrop-blur-md border border-primary/30 text-primary"
+        >
+          {isMobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      )}
 
       {/* Mobile overlay */}
-      {isMobileOpen && (
+      {isMobileOpen && isMobile && (
         <div className="md:hidden fixed inset-0 bg-black/70 z-20" onClick={() => setIsMobileOpen(false)}></div>
       )}
 
@@ -56,7 +80,7 @@ export function SideNavigation({ activePage, onNavigate, player, onLogout }: Sid
         initial={false}
         animate={{
           width: isCollapsed ? "80px" : "240px",
-          x: isMobileOpen ? 0 : window.innerWidth < 768 ? -240 : 0,
+          x: isMobileOpen || !isMobile ? 0 : -240,
         }}
         transition={{ duration: 0.3 }}
         className={`fixed md:relative top-0 left-0 h-full z-20 bg-black/80 backdrop-blur-lg border-r border-primary/20 flex flex-col`}
@@ -72,9 +96,11 @@ export function SideNavigation({ activePage, onNavigate, player, onLogout }: Sid
               ARISE
             </motion.h1>
           )}
-          <button onClick={toggleCollapse} className="hidden md:block text-primary/70 hover:text-primary">
-            {isCollapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
-          </button>
+          {!isMobile && (
+            <button onClick={toggleCollapse} className="text-primary/70 hover:text-primary">
+              {isCollapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
+            </button>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent">
@@ -82,12 +108,7 @@ export function SideNavigation({ activePage, onNavigate, player, onLogout }: Sid
             {navItems.map((item) => (
               <Button
                 key={item.id}
-                onClick={() => {
-                  onNavigate(item.id)
-                  if (window.innerWidth < 768) {
-                    setIsMobileOpen(false)
-                  }
-                }}
+                onClick={() => handleNavigate(item.id)}
                 variant="ghost"
                 className={`w-full justify-start py-2 px-3 rounded-none transition-colors ${
                   activePage === item.id

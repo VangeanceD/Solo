@@ -15,7 +15,8 @@ import { InventoryPage } from "@/components/pages/inventory-page"
 import { RewardsPage } from "@/components/pages/rewards-page"
 import { SettingsPage } from "@/components/pages/settings-page"
 import { HeaderInfo } from "@/components/header-info"
-import type { Player } from "@/lib/player"
+import { useNotification } from "@/components/notification-provider"
+import type { Player, Quest, DailyQuest } from "@/lib/player"
 
 interface GameLayoutProps {
   player: Player
@@ -26,27 +27,142 @@ interface GameLayoutProps {
 export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
   const [activePage, setActivePage] = useState("profile")
   const [questTimerKey, setQuestTimerKey] = useState(0)
-  const [activeQuest, setActiveQuest] = useState(null)
+  const [activeQuest, setActiveQuest] = useState<Quest | DailyQuest | null>(null)
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
+  const [showQuestComplete, setShowQuestComplete] = useState(false)
+  const [completedQuest, setCompletedQuest] = useState<Quest | DailyQuest | null>(null)
+  const [statIncreases, setStatIncreases] = useState<Record<string, number>>({})
+  const [showPunishment, setShowPunishment] = useState(false)
+  const [punishmentMessage, setPunishmentMessage] = useState("")
+  const { addNotification } = useNotification()
 
   // Reset quest timer when changing pages
   useEffect(() => {
     setQuestTimerKey((prev) => prev + 1)
   }, [activePage])
 
-  const handleStartQuest = (quest: any) => {
-    setActiveQuest(quest)
-    setTimeRemaining(quest.timeLimit * 60) // Convert minutes to seconds
+  const handleStartQuest = (quest: Quest | DailyQuest) => {
+    try {
+      setActiveQuest(quest)
+      setTimeRemaining(quest.timeLimit * 60) // Convert minutes to seconds
+      addNotification(`Started: ${quest.title}`, "info")
+    } catch (error) {
+      console.error("Error starting quest:", error)
+      addNotification("Error starting quest", "error")
+    }
   }
 
   const handleCompleteQuest = () => {
-    setActiveQuest(null)
-    setTimeRemaining(null)
+    if (!activeQuest) return
+
+    try {
+      // Store the completed quest before resetting active quest
+      setCompletedQuest(activeQuest)
+
+      // Calculate stat increases if it's a regular quest
+      if ("statIncreases" in activeQuest && activeQuest.statIncreases) {
+        setStatIncreases(activeQuest.statIncreases)
+      } else {
+        setStatIncreases({})
+      }
+
+      setShowQuestComplete(true)
+      setActiveQuest(null)
+      setTimeRemaining(null)
+    } catch (error) {
+      console.error("Error completing quest:", error)
+      addNotification("Error completing quest", "error")
+    }
   }
 
   const handleCancelQuest = () => {
-    setActiveQuest(null)
-    setTimeRemaining(null)
+    if (!activeQuest) return
+
+    try {
+      if ("penalty" in activeQuest) {
+        // It's a daily quest with penalty
+        setPunishmentMessage(
+          `You failed to complete "${activeQuest.title}" in time. You lose ${activeQuest.penalty} XP.`,
+        )
+        setShowPunishment(true)
+
+        // Apply penalty
+        setPlayer({
+          ...player,
+          xp: Math.max(0, player.xp - activeQuest.penalty),
+        })
+      } else {
+        addNotification(`Quest "${activeQuest.title}" was cancelled.`, "error")
+      }
+
+      setActiveQuest(null)
+      setTimeRemaining(null)
+    } catch (error) {
+      console.error("Error cancelling quest:", error)
+      addNotification("Error cancelling quest", "error")
+    }
+  }
+
+  const handleQuestCompleteClose = () => {
+    setShowQuestComplete(false)
+    setCompletedQuest(null)
+  }
+
+  const handlePunishmentClose = () => {
+    setShowPunishment(false)
+  }
+
+  const renderActivePage = () => {
+    try {
+      switch (activePage) {
+        case "profile":
+          return <ProfilePage player={player} />
+        case "quests":
+          return (
+            <QuestsPage
+              player={player}
+              activeQuest={activeQuest}
+              onStartQuest={handleStartQuest}
+              onCompleteQuest={handleCompleteQuest}
+              onCancelQuest={handleCancelQuest}
+            />
+          )
+        case "daily-quests":
+          return (
+            <DailyQuestsPage
+              player={player}
+              activeQuest={activeQuest}
+              onStartQuest={handleStartQuest}
+              setPlayer={setPlayer}
+            />
+          )
+        case "create-quest":
+          return <CreateQuestPage player={player} setPlayer={setPlayer} />
+        case "customize-profile":
+          return <ProfileCustomizationPage player={player} setPlayer={setPlayer} />
+        case "inventory":
+          return <InventoryPage player={player} />
+        case "rewards":
+          return <RewardsPage player={player} setPlayer={setPlayer} />
+        case "settings":
+          return <SettingsPage player={player} setPlayer={setPlayer} onLogout={onLogout} />
+        default:
+          return <ProfilePage player={player} />
+      }
+    } catch (error) {
+      console.error("Error rendering page:", error)
+      return (
+        <div className="text-center py-8">
+          <div className="text-red-500 font-michroma mb-4">Error loading page</div>
+          <button
+            onClick={() => setActivePage("profile")}
+            className="bg-primary/20 hover:bg-primary/30 text-primary px-4 py-2 border border-primary/30"
+          >
+            Return to Profile
+          </button>
+        </div>
+      )
+    }
   }
 
   return (
@@ -73,42 +189,25 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
               />
             )}
 
-            {activePage === "profile" && <ProfilePage player={player} />}
-
-            {activePage === "quests" && (
-              <QuestsPage
-                player={player}
-                activeQuest={activeQuest}
-                onStartQuest={handleStartQuest}
-                onCompleteQuest={handleCompleteQuest}
-                onCancelQuest={handleCancelQuest}
-              />
-            )}
-
-            {activePage === "daily-quests" && (
-              <DailyQuestsPage
-                player={player}
-                activeQuest={activeQuest}
-                onStartQuest={handleStartQuest}
-                setPlayer={setPlayer}
-              />
-            )}
-
-            {activePage === "create-quest" && <CreateQuestPage player={player} setPlayer={setPlayer} />}
-
-            {activePage === "customize-profile" && <ProfileCustomizationPage player={player} setPlayer={setPlayer} />}
-
-            {activePage === "inventory" && <InventoryPage player={player} />}
-
-            {activePage === "rewards" && <RewardsPage player={player} setPlayer={setPlayer} />}
-
-            {activePage === "settings" && <SettingsPage player={player} setPlayer={setPlayer} />}
+            {renderActivePage()}
           </div>
         </main>
       </div>
 
-      <QuestCompleteOverlay show={false} onClose={() => {}} quest={null} statIncreases={{}} />
-      <PunishmentModal show={false} onClose={() => {}} message="" player={player} setPlayer={setPlayer} />
+      <QuestCompleteOverlay
+        show={showQuestComplete}
+        onClose={handleQuestCompleteClose}
+        quest={completedQuest}
+        statIncreases={statIncreases}
+      />
+
+      <PunishmentModal
+        show={showPunishment}
+        onClose={handlePunishmentClose}
+        message={punishmentMessage}
+        player={player}
+        setPlayer={setPlayer}
+      />
     </div>
   )
 }

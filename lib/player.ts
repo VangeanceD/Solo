@@ -107,6 +107,17 @@ export function createDefaultPlayer(name: string): Player {
           intelligence: 1,
         },
       },
+      {
+        id: generateId(),
+        title: "Meditate for 15 minutes",
+        description: "Practice mindfulness and inner peace",
+        completed: false,
+        xp: 25,
+        timeLimit: 20,
+        statIncreases: {
+          charisma: 1,
+        },
+      },
     ],
     dailyQuests: [
       {
@@ -120,8 +131,8 @@ export function createDefaultPlayer(name: string): Player {
       },
       {
         id: generateId(),
-        title: "Meditate for 10 minutes",
-        description: "Clear your mind and reduce stress",
+        title: "Take a 10-minute walk",
+        description: "Get some fresh air and light exercise",
         completed: false,
         xp: 15,
         timeLimit: 15,
@@ -143,6 +154,13 @@ export function createDefaultPlayer(name: string): Player {
         cost: 100,
         used: false,
       },
+      {
+        id: generateId(),
+        title: "Favorite snack",
+        description: "Treat yourself to your favorite snack",
+        cost: 75,
+        used: false,
+      },
     ],
     inventory: [
       {
@@ -154,7 +172,7 @@ export function createDefaultPlayer(name: string): Player {
         equipped: false,
       },
     ],
-    title: "Novice Hunter",
+    title: "Novice",
     avatar: "/avatars/default.png",
     createdAt: now,
     lastLogin: now,

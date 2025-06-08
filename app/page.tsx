@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { IntroAnimation } from "@/components/intro-animation"
 import { IntroScreen } from "@/components/intro-screen"
 import { GameLayout } from "@/components/game-layout"
@@ -14,30 +13,59 @@ export default function Page() {
   const [introCompleted, setIntroCompleted] = useState(false)
   const [player, setPlayer] = useLocalStorage<Player | null>("player", null)
   const [showIntro, setShowIntro] = useState(true)
-  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check if we should skip intro animation
-    const skipIntro = localStorage.getItem("skipIntro")
-    if (skipIntro) {
-      setIntroCompleted(true)
-      setShowIntro(false)
+    try {
+      // Check if we should skip intro animation
+      const skipIntro = localStorage.getItem("skipIntro")
+      if (skipIntro) {
+        setIntroCompleted(true)
+        setShowIntro(false)
+      }
+    } catch (error) {
+      console.error("Error accessing localStorage:", error)
+    } finally {
+      setIsLoading(false)
     }
   }, [])
 
   const handleIntroComplete = () => {
     setIntroCompleted(true)
-    localStorage.setItem("skipIntro", "true")
+    try {
+      localStorage.setItem("skipIntro", "true")
+    } catch (error) {
+      console.error("Error setting localStorage:", error)
+    }
   }
 
   const handlePlayerCreation = (name: string) => {
-    const newPlayer = createDefaultPlayer(name)
-    setPlayer(newPlayer)
+    try {
+      const newPlayer = createDefaultPlayer(name)
+      setPlayer(newPlayer)
+    } catch (error) {
+      console.error("Error creating player:", error)
+    }
   }
 
   const handleLogout = () => {
-    localStorage.removeItem("skipIntro")
-    router.refresh()
+    try {
+      localStorage.removeItem("player")
+      localStorage.removeItem("skipIntro")
+      setPlayer(null)
+      setIntroCompleted(false)
+      setShowIntro(true)
+    } catch (error) {
+      console.error("Error during logout:", error)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-primary font-audiowide text-xl">Loading...</div>
+      </div>
+    )
   }
 
   if (showIntro && !introCompleted) {
