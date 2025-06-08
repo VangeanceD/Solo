@@ -1,11 +1,13 @@
 "use client"
 
 import { useEffect } from "react"
-import type { Quest, DailyQuest } from "@/lib/player"
+import type { Quest, DailyQuest, Player } from "@/lib/player"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
-import { X, Star } from "lucide-react"
+import { X, Star, CheckCircle } from "lucide-react"
 import { motion } from "framer-motion"
+import { useNotification } from "@/components/notification-provider"
+import { useLevelUp } from "@/components/level-up-provider"
 
 interface QuestTimerProps {
   quest: Quest | DailyQuest
@@ -13,11 +15,24 @@ interface QuestTimerProps {
   setTimeRemaining: (time: number) => void
   onComplete: () => void
   onFailure: () => void
+  player?: Player
+  setPlayer?: (player: Player) => void
 }
 
-export function QuestTimer({ quest, timeRemaining, setTimeRemaining, onComplete, onFailure }: QuestTimerProps) {
+export function QuestTimer({
+  quest,
+  timeRemaining,
+  setTimeRemaining,
+  onComplete,
+  onFailure,
+  player,
+  setPlayer,
+}: QuestTimerProps) {
+  const { addNotification } = useNotification()
+  const { showLevelUp } = useLevelUp()
+
   useEffect(() => {
-    if (timeRemaining === null) return
+    if (timeRemaining === null || timeRemaining <= 0) return
 
     const timer = setInterval(() => {
       setTimeRemaining(timeRemaining - 1)
@@ -43,6 +58,51 @@ export function QuestTimer({ quest, timeRemaining, setTimeRemaining, onComplete,
   const percentRemaining = (timeRemaining / totalSeconds) * 100
   const isLowTime = percentRemaining < 25
   const isWarningTime = percentRemaining < 50 && percentRemaining >= 25
+
+  const handleCompleteQuest = () => {
+    if (player && setPlayer) {
+      const oldLevel = player.level
+
+      // Update quest as completed
+      const updatedQuests = player.quests.map((q) => (q.id === quest.id ? { ...q, completed: true } : q))
+
+      // Calculate new XP and level
+      const newXP = player.xp + quest.xp
+      const newLevel = Math.floor(newXP / player.xpToNextLevel) + 1
+
+      // Add XP and stat increases
+      const updatedPlayer = {
+        ...player,
+        quests: updatedQuests,
+        xp: newXP,
+        level: newLevel,
+      }
+
+      // Add stat increases if it's a regular quest
+      if ("statIncreases" in quest && quest.statIncreases) {
+        const newStats = { ...player.stats }
+        const statIncreases: Record<string, number> = {}
+
+        Object.entries(quest.statIncreases).forEach(([stat, increase]) => {
+          if (stat in newStats) {
+            newStats[stat as keyof typeof newStats] += increase
+            statIncreases[stat] = increase
+          }
+        })
+        updatedPlayer.stats = newStats
+
+        // Show level up if player leveled up
+        if (newLevel > oldLevel) {
+          showLevelUp(newLevel, statIncreases)
+        }
+      }
+
+      setPlayer(updatedPlayer)
+      addNotification(`Quest completed! +${quest.xp} XP`, "success")
+    }
+
+    onComplete()
+  }
 
   return (
     <motion.div
@@ -89,9 +149,10 @@ export function QuestTimer({ quest, timeRemaining, setTimeRemaining, onComplete,
 
       <div className="flex space-x-3">
         <Button
-          onClick={onComplete}
-          className="flex-1 py-2 bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary"
+          onClick={handleCompleteQuest}
+          className="flex-1 py-2 bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary flex items-center justify-center"
         >
+          <CheckCircle className="w-4 h-4 mr-2" />
           COMPLETE {"penalty" in quest ? "MISSION" : "QUEST"}
         </Button>
         <Button

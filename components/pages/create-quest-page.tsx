@@ -1,17 +1,13 @@
 "use client"
 
-import type { Player, Quest } from "@/lib/player"
-import { Card } from "@/components/ui/card"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { useState } from "react"
+import { Slider } from "@/components/ui/slider"
 import { useNotification } from "@/components/notification-provider"
-import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
+import type { Player, Quest } from "@/lib/player"
 
 interface CreateQuestPageProps {
   player: Player
@@ -19,218 +15,166 @@ interface CreateQuestPageProps {
 }
 
 export function CreateQuestPage({ player, setPlayer }: CreateQuestPageProps) {
+  const { addNotification } = useNotification()
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
-  const [xp, setXp] = useState("100")
-  const [timeLimit, setTimeLimit] = useState("30")
-  const [category, setCategory] = useState("physical")
-  const [punishment, setPunishment] = useState("You failed to complete the quest in time!")
-  const [selectedStats, setSelectedStats] = useState<string[]>([])
+  const [timeLimit, setTimeLimit] = useState([30])
+  const [xp, setXp] = useState([50])
+  const [statIncreases, setStatIncreases] = useState({
+    strength: 0,
+    agility: 0,
+    endurance: 0,
+    intelligence: 0,
+    charisma: 0,
+  })
 
-  const { showNotification } = useNotification()
-  const router = useRouter()
-
-  const handleStatChange = (stat: string, checked: boolean) => {
-    if (checked) {
-      setSelectedStats([...selectedStats, stat])
-    } else {
-      setSelectedStats(selectedStats.filter((s) => s !== stat))
-    }
+  const handleStatChange = (stat: keyof typeof statIncreases, value: number[]) => {
+    setStatIncreases({
+      ...statIncreases,
+      [stat]: value[0],
+    })
   }
 
-  const handleSubmit = () => {
-    if (!title || !description) {
-      showNotification({
-        title: "MISSING INFORMATION",
-        message: "Please fill in the title and description fields.",
-        type: "warning",
-      })
+  const handleCreateQuest = () => {
+    if (!title.trim()) {
+      addNotification("Please enter a quest title", "error")
       return
     }
 
-    const newQuest: Quest = {
-      id: Date.now().toString(),
-      title,
-      description,
-      xp: Number.parseInt(xp) || 100,
-      timeLimit: Number.parseInt(timeLimit) || 30,
-      category: category as any,
-      stats: selectedStats as any[],
-      punishment,
-      completed: false,
+    if (!description.trim()) {
+      addNotification("Please enter a quest description", "error")
+      return
     }
 
-    const updatedPlayer = { ...player }
-    updatedPlayer.quests.push(newQuest)
-    setPlayer(updatedPlayer)
-
-    // Show success notification
-    showNotification({
-      title: "QUEST CREATED",
-      message: `Your new quest "${title}" has been created successfully!`,
-      type: "success",
+    // Filter out stats with 0 value
+    const filteredStatIncreases: Partial<typeof statIncreases> = {}
+    Object.entries(statIncreases).forEach(([key, value]) => {
+      if (value > 0) {
+        filteredStatIncreases[key as keyof typeof statIncreases] = value
+      }
     })
 
-    // Navigate to quests page
-    router.push("/quests")
+    const newQuest: Quest = {
+      id: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+      title: title.trim(),
+      description: description.trim(),
+      timeLimit: timeLimit[0],
+      xp: xp[0],
+      completed: false,
+      statIncreases: filteredStatIncreases,
+    }
+
+    const updatedPlayer = {
+      ...player,
+      quests: [...player.quests, newQuest],
+    }
+
+    setPlayer(updatedPlayer)
+
+    addNotification("Quest created successfully!", "success")
+
+    // Reset form
+    setTitle("")
+    setDescription("")
+    setTimeLimit([30])
+    setXp([50])
+    setStatIncreases({
+      strength: 0,
+      agility: 0,
+      endurance: 0,
+      intelligence: 0,
+      charisma: 0,
+    })
   }
 
   return (
-    <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-      <Card className="bg-black/80 backdrop-blur-lg p-6 rounded-none border border-primary/30 shadow-[0_0_15px_rgba(0,168,255,0.3)] cyberpunk-border holographic-ui">
-        <div className="holographic-header">Create New Quest</div>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold text-primary font-audiowide glow-text">CREATE QUEST</h1>
 
-        <div className="space-y-4">
+      <div className="bg-black/60 backdrop-blur-md border border-primary/30 p-6 animate-border-glow cyberpunk-border holographic-ui">
+        <div className="holographic-header">Quest Configuration</div>
+
+        <div className="space-y-6">
           <div>
-            <Label className="text-primary/80 block mb-2 font-michroma">Quest Title</Label>
+            <Label htmlFor="title" className="text-white/70 font-michroma mb-2 block">
+              Quest Title
+            </Label>
             <Input
-              type="text"
+              id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 bg-black/60 text-primary border border-primary/30 rounded-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-electrolize"
+              className="bg-black/60 border-primary/30 text-white font-electrolize"
               placeholder="Enter quest title"
             />
           </div>
 
           <div>
-            <Label className="text-primary/80 block mb-2 font-michroma">Description</Label>
+            <Label htmlFor="description" className="text-white/70 font-michroma mb-2 block">
+              Quest Description
+            </Label>
             <Textarea
+              id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 py-2 bg-black/60 text-primary border border-primary/30 rounded-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary h-24 font-electrolize"
+              className="bg-black/60 border-primary/30 text-white font-electrolize min-h-[100px]"
               placeholder="Enter quest description"
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label className="text-primary/80 block mb-2 font-michroma">XP Reward</Label>
-              <Input
-                type="number"
-                value={xp}
-                onChange={(e) => setXp(e.target.value)}
-                className="w-full px-3 py-2 bg-black/60 text-primary border border-primary/30 rounded-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-orbitron"
-                min="0"
-              />
-            </div>
-
-            <div>
-              <Label className="text-primary/80 block mb-2 font-michroma">Time Limit (minutes)</Label>
-              <Input
-                type="number"
-                value={timeLimit}
-                onChange={(e) => setTimeLimit(e.target.value)}
-                className="w-full px-3 py-2 bg-black/60 text-primary border border-primary/30 rounded-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-orbitron"
-                min="0"
-              />
-            </div>
-          </div>
-
           <div>
-            <Label className="text-primary/80 block mb-2 font-michroma">Category</Label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="w-full px-3 py-2 bg-black/60 text-primary border border-primary/30 rounded-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-electrolize">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent className="bg-black/90 border border-primary/30 text-primary font-electrolize">
-                <SelectItem value="physical">Physical</SelectItem>
-                <SelectItem value="mental">Mental</SelectItem>
-                <SelectItem value="health">Health</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label className="text-primary/80 block mb-2 font-michroma">Punishment (if quest fails)</Label>
-            <Textarea
-              value={punishment}
-              onChange={(e) => setPunishment(e.target.value)}
-              className="w-full px-3 py-2 bg-black/60 text-primary border border-primary/30 rounded-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary h-24 font-electrolize"
-              placeholder="Enter punishment for failing the quest"
+            <Label htmlFor="timeLimit" className="text-white/70 font-michroma mb-2 block">
+              Time Limit: {timeLimit[0]} minutes
+            </Label>
+            <Slider
+              id="timeLimit"
+              value={timeLimit}
+              min={5}
+              max={180}
+              step={5}
+              onValueChange={setTimeLimit}
+              className="my-4"
             />
           </div>
 
           <div>
-            <Label className="text-primary/80 block mb-2 font-michroma">Stats to Improve</Label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              <div className="flex items-center space-x-2 bg-black/40 p-2 rounded-none cursor-pointer hover:bg-black/60">
-                <Checkbox
-                  id="stat-strength"
-                  checked={selectedStats.includes("strength")}
-                  onCheckedChange={(checked) => handleStatChange("strength", checked as boolean)}
-                  className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+            <Label htmlFor="xp" className="text-white/70 font-michroma mb-2 block">
+              XP Reward: {xp[0]} XP
+            </Label>
+            <Slider id="xp" value={xp} min={10} max={500} step={5} onValueChange={setXp} className="my-4" />
+          </div>
+
+          <div className="space-y-4">
+            <Label className="text-white/70 font-michroma">Stat Increases</Label>
+
+            {Object.entries(statIncreases).map(([stat, value]) => (
+              <div key={stat} className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor={stat} className="text-white/70 font-electrolize capitalize">
+                    {stat}
+                  </Label>
+                  <span className="text-primary font-orbitron">+{value}</span>
+                </div>
+                <Slider
+                  id={stat}
+                  value={[value]}
+                  min={0}
+                  max={5}
+                  step={1}
+                  onValueChange={(val) => handleStatChange(stat as keyof typeof statIncreases, val)}
+                  className="my-2"
                 />
-                <Label htmlFor="stat-strength" className="text-primary/80 font-electrolize cursor-pointer">
-                  Strength
-                </Label>
               </div>
-              <div className="flex items-center space-x-2 bg-black/40 p-2 rounded-none cursor-pointer hover:bg-black/60">
-                <Checkbox
-                  id="stat-endurance"
-                  checked={selectedStats.includes("endurance")}
-                  onCheckedChange={(checked) => handleStatChange("endurance", checked as boolean)}
-                  className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                />
-                <Label htmlFor="stat-endurance" className="text-primary/80 font-electrolize cursor-pointer">
-                  Endurance
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2 bg-black/40 p-2 rounded-none cursor-pointer hover:bg-black/60">
-                <Checkbox
-                  id="stat-focus"
-                  checked={selectedStats.includes("focus")}
-                  onCheckedChange={(checked) => handleStatChange("focus", checked as boolean)}
-                  className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                />
-                <Label htmlFor="stat-focus" className="text-primary/80 font-electrolize cursor-pointer">
-                  Focus
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2 bg-black/40 p-2 rounded-none cursor-pointer hover:bg-black/60">
-                <Checkbox
-                  id="stat-discipline"
-                  checked={selectedStats.includes("discipline")}
-                  onCheckedChange={(checked) => handleStatChange("discipline", checked as boolean)}
-                  className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                />
-                <Label htmlFor="stat-discipline" className="text-primary/80 font-electrolize cursor-pointer">
-                  Discipline
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2 bg-black/40 p-2 rounded-none cursor-pointer hover:bg-black/60">
-                <Checkbox
-                  id="stat-agility"
-                  checked={selectedStats.includes("agility")}
-                  onCheckedChange={(checked) => handleStatChange("agility", checked as boolean)}
-                  className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                />
-                <Label htmlFor="stat-agility" className="text-primary/80 font-electrolize cursor-pointer">
-                  Agility
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2 bg-black/40 p-2 rounded-none cursor-pointer hover:bg-black/60">
-                <Checkbox
-                  id="stat-intelligence"
-                  checked={selectedStats.includes("intelligence")}
-                  onCheckedChange={(checked) => handleStatChange("intelligence", checked as boolean)}
-                  className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                />
-                <Label htmlFor="stat-intelligence" className="text-primary/80 font-electrolize cursor-pointer">
-                  Intelligence
-                </Label>
-              </div>
-            </div>
+            ))}
           </div>
 
           <Button
-            onClick={handleSubmit}
-            className="mt-4 w-full py-3 bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary font-michroma"
+            onClick={handleCreateQuest}
+            className="w-full py-3 bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary mt-6 font-michroma"
           >
             CREATE QUEST
           </Button>
         </div>
-      </Card>
-    </motion.div>
+      </div>
+    </div>
   )
 }
