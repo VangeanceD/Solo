@@ -128,27 +128,27 @@ export function QuestTimer({
 
   return (
     <motion.div
-      className="bg-black/80 backdrop-blur-lg p-6 rounded-none border border-primary/30 shadow-[0_0_15px_rgba(0,168,255,0.3)] mb-6 animate-border-glow cyberpunk-border holographic-ui"
+      className="bg-black/80 backdrop-blur-lg p-4 sm:p-6 rounded-none border border-primary/30 shadow-[0_0_15px_rgba(0,168,255,0.3)] mb-4 sm:mb-6 animate-border-glow cyberpunk-border holographic-ui"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
       <div className="holographic-header">
-        <div className="flex justify-between items-center">
-          <span className="font-michroma">Active {"penalty" in quest ? "Daily Mission" : "Quest"}</span>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+          <span className="font-michroma text-sm">Active {"penalty" in quest ? "Daily Mission" : "Quest"}</span>
           <div className="flex items-center space-x-2">
             <Star className="w-4 h-4 text-primary/70" />
-            <span className="text-primary/70 font-orbitron">{quest.xp} XP</span>
+            <span className="text-primary/70 font-orbitron text-sm">{quest.xp} XP</span>
           </div>
         </div>
       </div>
 
-      <h4 className="text-lg font-semibold text-primary mb-2 font-michroma">{quest.title}</h4>
-      <p className="text-primary/60 mb-4 font-electrolize">{quest.description}</p>
+      <h4 className="text-base sm:text-lg font-semibold text-primary mb-2 font-michroma">{quest.title}</h4>
+      <p className="text-primary/60 mb-4 font-electrolize text-sm">{quest.description}</p>
 
       <div className="mb-4">
         <div className="flex justify-between items-center mb-1">
-          <span className="text-primary/70 text-sm font-michroma">Time Remaining</span>
+          <span className="text-primary/70 text-xs sm:text-sm font-michroma">Time Remaining</span>
           <span
             className={`text-sm font-orbitron ${isLowTime ? "text-red-500" : isWarningTime ? "text-amber-500" : "text-primary/70"}`}
           >
@@ -169,10 +169,10 @@ export function QuestTimer({
         </Progress>
       </div>
 
-      <div className="flex space-x-3">
+      <div className="flex flex-col sm:flex-row gap-3">
         <Button
           onClick={handleCompleteQuest}
-          className="flex-1 py-2 bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary flex items-center justify-center"
+          className="flex-1 py-2 bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary flex items-center justify-center text-sm"
         >
           <CheckCircle className="w-4 h-4 mr-2" />
           COMPLETE {"penalty" in quest ? "MISSION" : "QUEST"}

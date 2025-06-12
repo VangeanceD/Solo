@@ -48,6 +48,20 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    /* Prevent horizontal scroll on mobile */
+    overflow-x: hidden;
+  }
+
+  /* Mobile-specific optimizations */
+  @media (max-width: 768px) {
+    html {
+      font-size: 14px;
+    }
+
+    body {
+      -webkit-text-size-adjust: 100%;
+      -webkit-tap-highlight-color: transparent;
+    }
   }
 }
 
@@ -95,12 +109,12 @@
 
   .cyberpunk-border::before {
     content: "";
-    @apply absolute -top-0.5 -left-0.5 w-5 h-5 border-t border-l border-primary;
+    @apply absolute -top-0.5 -left-0.5 w-3 h-3 sm:w-5 sm:h-5 border-t border-l border-primary;
   }
 
   .cyberpunk-border::after {
     content: "";
-    @apply absolute -bottom-0.5 -right-0.5 w-5 h-5 border-b border-r border-primary;
+    @apply absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-5 sm:h-5 border-b border-r border-primary;
   }
 
   .holographic-ui {
@@ -113,7 +127,7 @@
   }
 
   .holographic-header {
-    @apply relative py-2 px-4 bg-primary/20 border-b border-primary/50 mb-4 font-michroma uppercase tracking-wider text-sm;
+    @apply relative py-2 px-3 sm:px-4 bg-primary/20 border-b border-primary/50 mb-3 sm:mb-4 font-michroma uppercase tracking-wider text-xs sm:text-sm;
   }
 
   .holographic-header::before {
@@ -241,6 +255,22 @@
       top: 100%;
     }
   }
+
+  /* Mobile-specific improvements */
+  @media (max-width: 768px) {
+    .quest-card:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
+    .animate-float {
+      animation: none;
+    }
+
+    .glow-text {
+      text-shadow: 0 0 5px rgba(0, 168, 255, 0.3);
+    }
+  }
 }
 
 /* Utility classes for better quest display */
@@ -269,7 +299,13 @@
 
 /* Webkit scrollbar styling */
 .scrollbar-thin::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
+}
+
+@media (min-width: 768px) {
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
 }
 
 .scrollbar-thin::-webkit-scrollbar-track {
@@ -283,4 +319,39 @@
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 168, 255, 0.5);
+}
+
+/* Touch-friendly improvements for mobile */
+@media (max-width: 768px) {
+  button,
+  .btn-primary,
+  input,
+  textarea,
+  select {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  /* Prevent zoom on input focus */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* Responsive text sizing */
+@media (max-width: 640px) {
+  .text-6xl {
+    font-size: 2.5rem;
+  }
+  .text-5xl {
+    font-size: 2rem;
+  }
+  .text-4xl {
+    font-size: 1.75rem;
+  }
+  .text-3xl {
+    font-size: 1.5rem;
+  }
 }

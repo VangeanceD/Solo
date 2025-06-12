@@ -36,7 +36,12 @@ export function SideNavigation({ activePage, onNavigate, player, onLogout }: Sid
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
+      const mobile = window.innerWidth < 768
+      setIsMobile(mobile)
+      // Auto-collapse on mobile
+      if (mobile) {
+        setIsCollapsed(false)
+      }
     }
 
     checkMobile()
@@ -45,18 +50,48 @@ export function SideNavigation({ activePage, onNavigate, player, onLogout }: Sid
   }, [])
 
   const navItems = [
-    { id: "profile", label: "Profile", icon: <User className="w-5 h-5" /> },
-    { id: "quests", label: "Quests", icon: <Home className="w-5 h-5" /> },
-    { id: "daily-quests", label: "Daily Missions", icon: <Calendar className="w-5 h-5" /> },
-    { id: "create-quest", label: "Create Quest", icon: <Plus className="w-5 h-5" /> },
-    { id: "create-daily-missions", label: "Create Daily Missions", icon: <Target className="w-5 h-5" /> },
-    { id: "schedule", label: "Daily Schedule", icon: <Clock className="w-5 h-5" /> },
-    { id: "todo", label: "To-Do List", icon: <CheckSquare className="w-5 h-5" /> },
-    { id: "workout-accountability", label: "Workout Accountability", icon: <AlertTriangle className="w-5 h-5" /> },
-    { id: "customize-profile", label: "Customize", icon: <Palette className="w-5 h-5" /> },
-    { id: "inventory", label: "Inventory", icon: <Package className="w-5 h-5" /> },
-    { id: "rewards", label: "Rewards", icon: <Gift className="w-5 h-5" /> },
-    { id: "settings", label: "Settings", icon: <Settings className="w-5 h-5" /> },
+    { id: "profile", label: "Profile", icon: <User className="w-4 h-4 sm:w-5 sm:h-5" />, shortLabel: "Profile" },
+    { id: "quests", label: "Quests", icon: <Home className="w-4 h-4 sm:w-5 sm:h-5" />, shortLabel: "Quests" },
+    {
+      id: "daily-quests",
+      label: "Daily Missions",
+      icon: <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />,
+      shortLabel: "Daily",
+    },
+    {
+      id: "create-quest",
+      label: "Create Quest",
+      icon: <Plus className="w-4 h-4 sm:w-5 sm:h-5" />,
+      shortLabel: "Create",
+    },
+    {
+      id: "create-daily-missions",
+      label: "Create Daily Missions",
+      icon: <Target className="w-4 h-4 sm:w-5 sm:h-5" />,
+      shortLabel: "Daily+",
+    },
+    {
+      id: "schedule",
+      label: "Daily Schedule",
+      icon: <Clock className="w-4 h-4 sm:w-5 sm:h-5" />,
+      shortLabel: "Schedule",
+    },
+    { id: "todo", label: "To-Do List", icon: <CheckSquare className="w-4 h-4 sm:w-5 sm:h-5" />, shortLabel: "To-Do" },
+    {
+      id: "workout-accountability",
+      label: "Workout Accountability",
+      icon: <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />,
+      shortLabel: "Workout",
+    },
+    {
+      id: "customize-profile",
+      label: "Customize",
+      icon: <Palette className="w-4 h-4 sm:w-5 sm:h-5" />,
+      shortLabel: "Custom",
+    },
+    { id: "inventory", label: "Inventory", icon: <Package className="w-4 h-4 sm:w-5 sm:h-5" />, shortLabel: "Items" },
+    { id: "rewards", label: "Rewards", icon: <Gift className="w-4 h-4 sm:w-5 sm:h-5" />, shortLabel: "Rewards" },
+    { id: "settings", label: "Settings", icon: <Settings className="w-4 h-4 sm:w-5 sm:h-5" />, shortLabel: "Settings" },
   ]
 
   const toggleCollapse = () => {
@@ -84,9 +119,9 @@ export function SideNavigation({ activePage, onNavigate, player, onLogout }: Sid
       {isMobile && (
         <button
           onClick={toggleMobileMenu}
-          className="md:hidden fixed top-4 left-4 z-30 p-2 bg-black/50 backdrop-blur-md border border-primary/30 text-primary"
+          className="md:hidden fixed top-3 left-3 z-30 p-2 bg-black/80 backdrop-blur-md border border-primary/30 text-primary rounded-sm"
         >
-          {isMobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       )}
 
@@ -99,26 +134,28 @@ export function SideNavigation({ activePage, onNavigate, player, onLogout }: Sid
       <motion.aside
         initial={false}
         animate={{
-          width: isCollapsed ? "80px" : "280px",
-          x: isMobileOpen || !isMobile ? 0 : -280,
+          width: isMobile ? "100%" : isCollapsed ? "80px" : "280px",
+          x: isMobileOpen || !isMobile ? 0 : isMobile ? "-100%" : -280,
         }}
         transition={{ duration: 0.3 }}
-        className={`fixed md:relative top-0 left-0 h-full z-20 bg-black/80 backdrop-blur-lg border-r border-primary/20 flex flex-col`}
+        className={`fixed md:relative top-0 left-0 h-full z-20 bg-black/90 md:bg-black/80 backdrop-blur-lg border-r border-primary/20 flex flex-col ${
+          isMobile ? "max-w-sm" : ""
+        }`}
       >
-        <div className="p-4 border-b border-primary/20 flex items-center justify-between">
+        <div className="p-3 sm:p-4 border-b border-primary/20 flex items-center justify-between">
           {!isCollapsed && (
             <motion.h1
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="text-xl font-bold text-primary font-audiowide glow-text"
+              className="text-lg sm:text-xl font-bold text-primary font-audiowide glow-text"
             >
               ARISE
             </motion.h1>
           )}
           {!isMobile && (
             <button onClick={toggleCollapse} className="text-primary/70 hover:text-primary">
-              {isCollapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
+              {isCollapsed ? <Menu className="w-4 h-4 sm:w-5 sm:h-5" /> : <X className="w-4 h-4 sm:w-5 sm:h-5" />}
             </button>
           )}
         </div>
@@ -130,21 +167,21 @@ export function SideNavigation({ activePage, onNavigate, player, onLogout }: Sid
                 key={item.id}
                 onClick={() => handleNavigate(item.id)}
                 variant="ghost"
-                className={`w-full justify-start py-2 px-3 rounded-none transition-colors ${
+                className={`w-full justify-start py-2 px-3 rounded-none transition-colors text-sm ${
                   activePage === item.id
                     ? "bg-primary/20 text-primary border-l-2 border-primary"
                     : "text-white/70 hover:text-white hover:bg-primary/10"
                 }`}
               >
-                <span className="mr-3">{item.icon}</span>
-                {!isCollapsed && (
+                <span className="mr-2 sm:mr-3 flex-shrink-0">{item.icon}</span>
+                {(!isCollapsed || isMobile) && (
                   <motion.span
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="font-electrolize text-sm"
+                    className="font-electrolize text-xs sm:text-sm truncate"
                   >
-                    {item.label}
+                    {isMobile && window.innerWidth < 400 ? item.shortLabel : item.label}
                   </motion.span>
                 )}
               </Button>
@@ -156,17 +193,17 @@ export function SideNavigation({ activePage, onNavigate, player, onLogout }: Sid
           <Button
             onClick={onLogout}
             variant="ghost"
-            className="w-full justify-start py-2 px-3 rounded-none text-white/70 hover:text-white hover:bg-primary/10 transition-colors"
+            className="w-full justify-start py-2 px-3 rounded-none text-white/70 hover:text-white hover:bg-primary/10 transition-colors text-sm"
           >
-            <span className="mr-3">
-              <LogOut className="w-5 h-5" />
+            <span className="mr-2 sm:mr-3 flex-shrink-0">
+              <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
             </span>
-            {!isCollapsed && (
+            {(!isCollapsed || isMobile) && (
               <motion.span
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="font-electrolize"
+                className="font-electrolize text-xs sm:text-sm"
               >
                 Logout
               </motion.span>

@@ -209,23 +209,26 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
         <SideNavigation activePage={activePage} onNavigate={setActivePage} player={player} onLogout={onLogout} />
 
         <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent">
-          <div className="container mx-auto p-4 pb-24">
-            <HeaderInfo player={player} />
+          <div className="container mx-auto p-3 sm:p-4 pb-20 sm:pb-24 max-w-7xl">
+            {/* Add top padding on mobile to account for menu button */}
+            <div className="pt-12 md:pt-0">
+              <HeaderInfo player={player} />
 
-            {activeQuest && (
-              <QuestTimer
-                key={questTimerKey}
-                quest={activeQuest}
-                timeRemaining={timeRemaining}
-                setTimeRemaining={setTimeRemaining}
-                onComplete={handleCompleteQuest}
-                onFailure={handleCancelQuest}
-                player={player}
-                setPlayer={setPlayer}
-              />
-            )}
+              {activeQuest && (
+                <QuestTimer
+                  key={questTimerKey}
+                  quest={activeQuest}
+                  timeRemaining={timeRemaining}
+                  setTimeRemaining={setTimeRemaining}
+                  onComplete={handleCompleteQuest}
+                  onFailure={handleCancelQuest}
+                  player={player}
+                  setPlayer={setPlayer}
+                />
+              )}
 
-            {renderActivePage()}
+              {renderActivePage()}
+            </div>
           </div>
         </main>
       </div>
