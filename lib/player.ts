@@ -83,9 +83,9 @@ export interface Player {
   stats: Stats
   quests: Quest[]
   dailyQuests: DailyQuest[]
-  schedule: ScheduleItem[]
-  todoList: TodoItem[]
-  workoutMisses: WorkoutMiss[]
+  schedule?: ScheduleItem[] // Make optional for backward compatibility
+  todoList?: TodoItem[] // Make optional for backward compatibility
+  workoutMisses?: WorkoutMiss[] // Make optional for backward compatibility
   rewards: Reward[]
   inventory: InventoryItem[]
   title: string
@@ -96,7 +96,7 @@ export interface Player {
     theme: string
     notifications: boolean
     sound: boolean
-    workoutPenalty: number
+    workoutPenalty?: number // Make optional for backward compatibility
   }
 }
 
@@ -265,7 +265,7 @@ export function createDefaultPlayer(name: string): Player {
       theme: "dark",
       notifications: true,
       sound: true,
-      workoutPenalty: 25, // XP lost for missing workout
+      workoutPenalty: 25,
     },
   }
 }
@@ -273,4 +273,22 @@ export function createDefaultPlayer(name: string): Player {
 // Helper function to generate unique IDs
 function generateId(): string {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+}
+
+// Migration function to update existing player data
+export function migratePlayerData(player: any): Player {
+  return {
+    ...player,
+    schedule: player.schedule || [],
+    todoList: player.todoList || [],
+    workoutMisses: player.workoutMisses || [],
+    settings: {
+      ...player.settings,
+      workoutPenalty: player.settings?.workoutPenalty || 25,
+    },
+    dailyQuests: (player.dailyQuests || []).map((quest: any) => ({
+      ...quest,
+      isCustom: quest.isCustom || false,
+    })),
+  }
 }

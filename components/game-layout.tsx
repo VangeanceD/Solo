@@ -130,13 +130,25 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
 
   const renderActivePage = () => {
     try {
+      // Ensure player has all required properties
+      const safePlayer = {
+        ...player,
+        schedule: player.schedule || [],
+        todoList: player.todoList || [],
+        workoutMisses: player.workoutMisses || [],
+        settings: {
+          ...player.settings,
+          workoutPenalty: player.settings?.workoutPenalty || 25,
+        },
+      }
+
       switch (activePage) {
         case "profile":
-          return <ProfilePage player={player} />
+          return <ProfilePage player={safePlayer} />
         case "quests":
           return (
             <QuestsPage
-              player={player}
+              player={safePlayer}
               activeQuest={activeQuest}
               onStartQuest={handleStartQuest}
               onCompleteQuest={handleCompleteQuest}
@@ -146,32 +158,32 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
         case "daily-quests":
           return (
             <DailyQuestsPage
-              player={player}
+              player={safePlayer}
               activeQuest={activeQuest}
               onStartQuest={handleStartQuest}
               setPlayer={setPlayer}
             />
           )
         case "create-quest":
-          return <CreateQuestPage player={player} setPlayer={setPlayer} />
+          return <CreateQuestPage player={safePlayer} setPlayer={setPlayer} />
         case "create-daily-missions":
-          return <CreateDailyMissionsPage player={player} setPlayer={setPlayer} />
+          return <CreateDailyMissionsPage player={safePlayer} setPlayer={setPlayer} />
         case "schedule":
-          return <SchedulePage player={player} setPlayer={setPlayer} />
+          return <SchedulePage player={safePlayer} setPlayer={setPlayer} />
         case "todo":
-          return <TodoPage player={player} setPlayer={setPlayer} />
+          return <TodoPage player={safePlayer} setPlayer={setPlayer} />
         case "workout-accountability":
-          return <WorkoutAccountabilityPage player={player} setPlayer={setPlayer} />
+          return <WorkoutAccountabilityPage player={safePlayer} setPlayer={setPlayer} />
         case "customize-profile":
-          return <ProfileCustomizationPage player={player} setPlayer={setPlayer} />
+          return <ProfileCustomizationPage player={safePlayer} setPlayer={setPlayer} />
         case "inventory":
-          return <InventoryPage player={player} />
+          return <InventoryPage player={safePlayer} />
         case "rewards":
-          return <RewardsPage player={player} setPlayer={setPlayer} />
+          return <RewardsPage player={safePlayer} setPlayer={setPlayer} />
         case "settings":
-          return <SettingsPage player={player} setPlayer={setPlayer} onLogout={onLogout} />
+          return <SettingsPage player={safePlayer} setPlayer={setPlayer} onLogout={onLogout} />
         default:
-          return <ProfilePage player={player} />
+          return <ProfilePage player={safePlayer} />
       }
     } catch (error) {
       console.error("Error rendering page:", error)

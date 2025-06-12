@@ -14,8 +14,15 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T)
         const item = window.localStorage.getItem(key)
         // Parse stored json or if none return initialValue
         if (item) {
-          const parsedValue = JSON.parse(item)
-          setStoredValue(parsedValue)
+          try {
+            const parsedValue = JSON.parse(item)
+            setStoredValue(parsedValue)
+          } catch (parseError) {
+            console.error("Error parsing localStorage data:", parseError)
+            // If parsing fails, remove the corrupted data
+            window.localStorage.removeItem(key)
+            setStoredValue(initialValue)
+          }
         }
       }
     } catch (error) {
