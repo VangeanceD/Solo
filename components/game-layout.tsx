@@ -9,6 +9,10 @@ import { PunishmentModal } from "@/components/punishment-modal"
 import { QuestsPage } from "@/components/pages/quests-page"
 import { DailyQuestsPage } from "@/components/pages/daily-quests-page"
 import { CreateQuestPage } from "@/components/pages/create-quest-page"
+import { CreateDailyMissionsPage } from "@/components/pages/create-daily-missions-page"
+import { SchedulePage } from "@/components/pages/schedule-page"
+import { TodoPage } from "@/components/pages/todo-page"
+import { WorkoutAccountabilityPage } from "@/components/pages/workout-accountability-page"
 import { ProfilePage } from "@/components/pages/profile-page"
 import { ProfileCustomizationPage } from "@/components/pages/profile-customization"
 import { InventoryPage } from "@/components/pages/inventory-page"
@@ -150,6 +154,14 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
           )
         case "create-quest":
           return <CreateQuestPage player={player} setPlayer={setPlayer} />
+        case "create-daily-missions":
+          return <CreateDailyMissionsPage player={player} setPlayer={setPlayer} />
+        case "schedule":
+          return <SchedulePage player={player} setPlayer={setPlayer} />
+        case "todo":
+          return <TodoPage player={player} setPlayer={setPlayer} />
+        case "workout-accountability":
+          return <WorkoutAccountabilityPage player={player} setPlayer={setPlayer} />
         case "customize-profile":
           return <ProfileCustomizationPage player={player} setPlayer={setPlayer} />
         case "inventory":

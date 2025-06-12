@@ -3,7 +3,23 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
-import { Home, Calendar, Plus, User, Palette, Package, Gift, Settings, LogOut, Menu, X } from "lucide-react"
+import {
+  Home,
+  Calendar,
+  Plus,
+  User,
+  Palette,
+  Package,
+  Gift,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  Clock,
+  CheckSquare,
+  AlertTriangle,
+  Target,
+} from "lucide-react"
 import type { Player } from "@/lib/player"
 
 interface SideNavigationProps {
@@ -33,6 +49,10 @@ export function SideNavigation({ activePage, onNavigate, player, onLogout }: Sid
     { id: "quests", label: "Quests", icon: <Home className="w-5 h-5" /> },
     { id: "daily-quests", label: "Daily Missions", icon: <Calendar className="w-5 h-5" /> },
     { id: "create-quest", label: "Create Quest", icon: <Plus className="w-5 h-5" /> },
+    { id: "create-daily-missions", label: "Create Daily Missions", icon: <Target className="w-5 h-5" /> },
+    { id: "schedule", label: "Daily Schedule", icon: <Clock className="w-5 h-5" /> },
+    { id: "todo", label: "To-Do List", icon: <CheckSquare className="w-5 h-5" /> },
+    { id: "workout-accountability", label: "Workout Accountability", icon: <AlertTriangle className="w-5 h-5" /> },
     { id: "customize-profile", label: "Customize", icon: <Palette className="w-5 h-5" /> },
     { id: "inventory", label: "Inventory", icon: <Package className="w-5 h-5" /> },
     { id: "rewards", label: "Rewards", icon: <Gift className="w-5 h-5" /> },
@@ -79,8 +99,8 @@ export function SideNavigation({ activePage, onNavigate, player, onLogout }: Sid
       <motion.aside
         initial={false}
         animate={{
-          width: isCollapsed ? "80px" : "240px",
-          x: isMobileOpen || !isMobile ? 0 : -240,
+          width: isCollapsed ? "80px" : "280px",
+          x: isMobileOpen || !isMobile ? 0 : -280,
         }}
         transition={{ duration: 0.3 }}
         className={`fixed md:relative top-0 left-0 h-full z-20 bg-black/80 backdrop-blur-lg border-r border-primary/20 flex flex-col`}
@@ -122,7 +142,7 @@ export function SideNavigation({ activePage, onNavigate, player, onLogout }: Sid
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="font-electrolize"
+                    className="font-electrolize text-sm"
                   >
                     {item.label}
                   </motion.span>

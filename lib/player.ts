@@ -15,6 +15,8 @@ export interface DailyQuest {
   xp: number
   timeLimit: number
   penalty: number
+  isCustom?: boolean
+  createdAt?: string
 }
 
 export interface Quest {
@@ -25,6 +27,34 @@ export interface Quest {
   xp: number
   timeLimit: number
   statIncreases: Partial<Stats>
+}
+
+export interface ScheduleItem {
+  id: string
+  time: string
+  title: string
+  description: string
+  completed: boolean
+  priority: "low" | "medium" | "high"
+}
+
+export interface TodoItem {
+  id: string
+  title: string
+  description: string
+  category: "urgent" | "school" | "personal" | "work" | "health" | "other"
+  priority: "low" | "medium" | "high"
+  completed: boolean
+  dueDate?: string
+  createdAt: string
+}
+
+export interface WorkoutMiss {
+  id: string
+  date: string
+  reason: string
+  xpLost: number
+  acknowledged: boolean
 }
 
 export interface Reward {
@@ -53,6 +83,9 @@ export interface Player {
   stats: Stats
   quests: Quest[]
   dailyQuests: DailyQuest[]
+  schedule: ScheduleItem[]
+  todoList: TodoItem[]
+  workoutMisses: WorkoutMiss[]
   rewards: Reward[]
   inventory: InventoryItem[]
   title: string
@@ -63,6 +96,7 @@ export interface Player {
     theme: string
     notifications: boolean
     sound: boolean
+    workoutPenalty: number
   }
 }
 
@@ -90,7 +124,7 @@ export function createDefaultPlayer(name: string): Player {
         description: "Finish a 30-minute workout session to boost your physical stats and start your fitness journey",
         completed: false,
         xp: 50,
-        timeLimit: 60, // 60 minutes
+        timeLimit: 60,
         statIncreases: {
           strength: 2,
           endurance: 1,
@@ -119,29 +153,6 @@ export function createDefaultPlayer(name: string): Player {
           intelligence: 1,
         },
       },
-      {
-        id: generateId(),
-        title: "Social Connection",
-        description: "Have a meaningful conversation with a friend or family member for at least 20 minutes",
-        completed: false,
-        xp: 30,
-        timeLimit: 30,
-        statIncreases: {
-          charisma: 2,
-        },
-      },
-      {
-        id: generateId(),
-        title: "Learn Something New",
-        description: "Spend 45 minutes learning a new skill, watching educational videos, or taking an online course",
-        completed: false,
-        xp: 60,
-        timeLimit: 60,
-        statIncreases: {
-          intelligence: 2,
-          agility: 1,
-        },
-      },
     ],
     dailyQuests: [
       {
@@ -150,8 +161,9 @@ export function createDefaultPlayer(name: string): Player {
         description: "Drink at least 8 glasses of water throughout the day to stay properly hydrated",
         completed: false,
         xp: 25,
-        timeLimit: 720, // 12 hours
+        timeLimit: 720,
         penalty: 10,
+        isCustom: false,
       },
       {
         id: generateId(),
@@ -161,17 +173,57 @@ export function createDefaultPlayer(name: string): Player {
         xp: 20,
         timeLimit: 20,
         penalty: 5,
+        isCustom: false,
+      },
+    ],
+    schedule: [
+      {
+        id: generateId(),
+        time: "07:00",
+        title: "Morning Routine",
+        description: "Wake up, brush teeth, drink water",
+        completed: false,
+        priority: "high",
       },
       {
         id: generateId(),
-        title: "Healthy Meal",
-        description: "Prepare and eat one healthy, balanced meal with vegetables and protein",
+        time: "08:00",
+        title: "Breakfast",
+        description: "Healthy breakfast with protein and fruits",
         completed: false,
-        xp: 30,
-        timeLimit: 90,
-        penalty: 15,
+        priority: "high",
+      },
+      {
+        id: generateId(),
+        time: "18:00",
+        title: "Workout Time",
+        description: "30-45 minute workout session",
+        completed: false,
+        priority: "high",
       },
     ],
+    todoList: [
+      {
+        id: generateId(),
+        title: "Complete project assignment",
+        description: "Finish the math project due tomorrow",
+        category: "school",
+        priority: "high",
+        completed: false,
+        dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        createdAt: now,
+      },
+      {
+        id: generateId(),
+        title: "Call family",
+        description: "Check in with parents and siblings",
+        category: "personal",
+        priority: "medium",
+        completed: false,
+        createdAt: now,
+      },
+    ],
+    workoutMisses: [],
     rewards: [
       {
         id: generateId(),
@@ -194,20 +246,6 @@ export function createDefaultPlayer(name: string): Player {
         cost: 75,
         used: false,
       },
-      {
-        id: generateId(),
-        title: "Social Media Time",
-        description: "30 minutes of guilt-free social media browsing",
-        cost: 25,
-        used: false,
-      },
-      {
-        id: generateId(),
-        title: "Shopping Spree",
-        description: "Buy something you've been wanting (within budget)",
-        cost: 200,
-        used: false,
-      },
     ],
     inventory: [
       {
@@ -227,6 +265,7 @@ export function createDefaultPlayer(name: string): Player {
       theme: "dark",
       notifications: true,
       sound: true,
+      workoutPenalty: 25, // XP lost for missing workout
     },
   }
 }
