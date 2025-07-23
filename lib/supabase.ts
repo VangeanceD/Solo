@@ -1,155 +1,71 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
-import type { Player } from "./player"
 
-let supabaseClient: SupabaseClient | null = null
+let supabase: SupabaseClient | null = null
 
-export function createSupabaseClient(url: string, key: string): SupabaseClient | null {
-  try {
-    if (!url || !key) {
-      console.error("Supabase URL and key are required")
-      return null
-    }
-
-    const client = createClient(url, key, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    })
-
-    return client
-  } catch (error) {
-    console.error("Failed to create Supabase client:", error)
-    return null
-  }
-}
-
-export function initializeSupabase(): SupabaseClient | null {
+export const initializeSupabase = () => {
   if (typeof window === "undefined") return null
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || localStorage.getItem("supabase_url")
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || localStorage.getItem("supabase_anon_key")
+
+  if (!supabaseUrl || !supabaseKey) {
+    return null
+  }
+
   try {
-    const url = localStorage.getItem("supabase_url")
-    const key = localStorage.getItem("supabase_key")
-
-    if (!url || !key) {
-      return null
-    }
-
-    supabaseClient = createSupabaseClient(url, key)
-    return supabaseClient
+    supabase = createClient(supabaseUrl, supabaseKey)
+    return supabase
   } catch (error) {
     console.error("Failed to initialize Supabase:", error)
     return null
   }
 }
 
-export function getSupabaseClient(): SupabaseClient | null {
-  if (!supabaseClient) {
-    supabaseClient = initializeSupabase()
+export const getSupabase = () => {
+  if (!supabase) {
+    return initializeSupabase()
   }
-  return supabaseClient
+  return supabase
 }
 
-export async function testSupabaseConnection(
-  url: string,
-  key: string,
-): Promise<{
-  success: boolean
-  error?: string
-  needsTableSetup?: boolean
-}> {
+export const testSupabaseConnection = async (url?: string, key?: string) => {
   try {
-    const client = createSupabaseClient(url, key)
-    if (!client) {
-      return { success: false, error: "Failed to create client" }
+    let testClient = supabase
+
+    if (url && key) {
+      testClient = createClient(url, key)
+    }
+
+    if (!testClient) {
+      return { success: false, error: "No Supabase client available" }
     }
 
     // Test basic connection
-    const { error: authError } = await client.auth.getSession()
-    if (authError && authError.message !== "Auth session missing!") {
-      return { success: false, error: authError.message }
-    }
-
-    // Test table access
-    const { error: tableError } = await client.from("players").select("count", { count: "exact", head: true })
-
-    if (tableError) {
-      if (tableError.code === "42P01") {
-        return { success: false, error: "Players table does not exist", needsTableSetup: true }
-      }
-      return { success: false, error: tableError.message }
-    }
-
-    return { success: true }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error occurred",
-    }
-  }
-}
-
-export async function savePlayerData(deviceId: string, playerData: Player): Promise<void> {
-  const client = getSupabaseClient()
-  if (!client) {
-    throw new Error("Supabase client not initialized")
-  }
-
-  const { error } = await client.from("players").upsert(
-    {
-      device_id: deviceId,
-      player_data: playerData,
-      updated_at: new Date().toISOString(),
-    },
-    {
-      onConflict: "device_id",
-    },
-  )
-
-  if (error) {
-    throw new Error(`Failed to save player data: ${error.message}`)
-  }
-}
-
-export async function loadPlayerData(deviceId: string): Promise<{
-  success: boolean
-  data?: Player
-  error?: string
-}> {
-  const client = getSupabaseClient()
-  if (!client) {
-    return { success: false, error: "Supabase client not initialized" }
-  }
-
-  try {
-    const { data, error } = await client
-      .from("players")
-      .select("player_data, updated_at")
-      .eq("device_id", deviceId)
-      .single()
+    const { data, error } = await testClient.from("players").select("count").limit(1)
 
     if (error) {
-      if (error.code === "PGRST116") {
-        // No data found - this is normal for new users
-        return { success: true, data: undefined }
+      if (error.message.includes("does not exist")) {
+        return {
+          success: false,
+          error: "Players table does not exist. Please run the SQL setup script.",
+          needsTableSetup: true,
+        }
       }
       return { success: false, error: error.message }
     }
 
-    return { success: true, data: data.player_data as Player }
+    return { success: true }
   } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error occurred",
-    }
+    return { success: false, error: error instanceof Error ? error.message : "Connection failed" }
   }
 }
 
-export function isSupabaseConfigured(): boolean {
-  if (typeof window === "undefined") return false
-
-  const url = localStorage.getItem("supabase_url")
-  const key = localStorage.getItem("supabase_key")
-
-  return !!(url && key)
+export const reinitializeSupabase = (url: string, key: string) => {
+  try {
+    supabase = createClient(url, key)
+    return supabase
+  } catch (error) {
+    console.error("Failed to reinitialize Supabase:", error)
+    return null
+  }
 }

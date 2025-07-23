@@ -2,26 +2,22 @@
 
 import { useState, useCallback } from "react"
 
-export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
-  // Initialize state with a function to avoid calling localStorage on every render
+export function useLocalStorage<T>(key: string, initialValue: T) {
+  // Initialize state with a function to avoid reading localStorage on every render
   const [storedValue, setStoredValue] = useState<T>(() => {
     if (typeof window === "undefined") {
       return initialValue
     }
-
     try {
       const item = window.localStorage.getItem(key)
-      if (item === null) {
-        return initialValue
-      }
-      return JSON.parse(item)
+      return item ? JSON.parse(item) : initialValue
     } catch (error) {
       console.error(`Error reading localStorage key "${key}":`, error)
       return initialValue
     }
   })
 
-  // Return a wrapped version of useState's setter function that persists the new value to localStorage
+  // Memoized setValue function to prevent unnecessary re-renders
   const setValue = useCallback(
     (value: T | ((val: T) => T)) => {
       try {
@@ -42,5 +38,5 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
     [key, storedValue],
   )
 
-  return [storedValue, setValue]
+  return [storedValue, setValue] as const
 }

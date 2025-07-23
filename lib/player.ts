@@ -3,13 +3,15 @@ export interface Quest {
   title: string
   description: string
   xpReward: number
+  coinReward: number
   completed: boolean
   createdAt: string
   completedAt?: string
-  category: "fitness" | "study" | "work" | "personal" | "health" | "creative"
-  priority: "low" | "medium" | "high"
-  difficulty: "easy" | "medium" | "hard"
-  timeEstimate?: number // in minutes
+  category: "daily" | "weekly" | "main" | "side"
+  difficulty: "easy" | "medium" | "hard" | "legendary"
+  urgent?: boolean
+  timeLimit?: number
+  penalty?: number
 }
 
 export interface DailyMission {
@@ -17,24 +19,10 @@ export interface DailyMission {
   title: string
   description: string
   xpReward: number
+  coinReward: number
   completed: boolean
   streak: number
   lastCompleted?: string
-  category: "fitness" | "study" | "work" | "personal" | "health" | "creative"
-}
-
-export interface InventoryItem {
-  id: string
-  name: string
-  description: string
-  type: "consumable" | "equipment" | "collectible"
-  rarity: "common" | "rare" | "epic" | "legendary"
-  quantity: number
-  effects?: {
-    xpBoost?: number
-    healthBoost?: number
-    energyBoost?: number
-  }
 }
 
 export interface Reward {
@@ -47,217 +35,95 @@ export interface Reward {
   claimedAt?: string
 }
 
-export interface Achievement {
-  id: string
-  title: string
-  description: string
-  icon: string
-  unlockedAt?: string
-  progress: number
-  maxProgress: number
-  xpReward: number
-  category: "quests" | "daily" | "social" | "progression" | "special"
-}
-
-export interface PlayerStats {
-  totalXpEarned: number
-  questsCompleted: number
-  dailyMissionsCompleted: number
-  currentStreak: number
-  longestStreak: number
-  achievementsUnlocked: number
-  totalPlayTime: number // in minutes
-  joinDate: string
-}
-
 export interface Player {
   id: string
   name: string
   level: number
   xp: number
   xpToNextLevel: number
+  coins: number
   avatar: string
   title: string
   rank: string
-  health: number
-  maxHealth: number
-  energy: number
-  maxEnergy: number
+  stats: {
+    strength: number
+    endurance: number
+    intelligence: number
+    charisma: number
+    luck: number
+  }
   quests: Quest[]
   dailyMissions: DailyMission[]
-  inventory: InventoryItem[]
   rewards: Reward[]
-  achievements: Achievement[]
-  stats: PlayerStats
-  settings: {
-    notifications: boolean
-    soundEffects: boolean
-    darkMode: boolean
-    autoSync: boolean
-  }
-  lastUpdated: string
+  completedQuests: number
+  totalXpEarned: number
   createdAt: string
+  lastActive: string
 }
 
-export function createDefaultPlayer(name = "Hunter"): Player {
-  const now = new Date().toISOString()
+export const createDefaultPlayer = (): Player => ({
+  id: crypto.randomUUID(),
+  name: "Hunter",
+  level: 1,
+  xp: 0,
+  xpToNextLevel: 100,
+  coins: 0,
+  avatar: "/placeholder.svg?height=64&width=64",
+  title: "Novice Hunter",
+  rank: "F",
+  stats: {
+    strength: 10,
+    endurance: 10,
+    intelligence: 10,
+    charisma: 10,
+    luck: 10,
+  },
+  quests: [],
+  dailyMissions: [],
+  rewards: [],
+  completedQuests: 0,
+  totalXpEarned: 0,
+  createdAt: new Date().toISOString(),
+  lastActive: new Date().toISOString(),
+})
 
-  return {
-    id: `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    name,
-    level: 1,
-    xp: 0,
-    xpToNextLevel: 100,
-    avatar: "/placeholder.svg?height=100&width=100&text=Avatar",
-    title: "Novice Hunter",
-    rank: "F",
-    health: 100,
-    maxHealth: 100,
-    energy: 100,
-    maxEnergy: 100,
-    quests: [],
-    dailyMissions: [
-      {
-        id: "daily_1",
-        title: "Morning Exercise",
-        description: "Complete 30 minutes of physical activity",
-        xpReward: 50,
-        completed: false,
-        streak: 0,
-        category: "fitness",
-      },
-      {
-        id: "daily_2",
-        title: "Learn Something New",
-        description: "Spend 20 minutes learning a new skill",
-        xpReward: 40,
-        completed: false,
-        streak: 0,
-        category: "study",
-      },
-    ],
-    inventory: [
-      {
-        id: "starter_potion",
-        name: "Starter Health Potion",
-        description: "Restores 50 health points",
-        type: "consumable",
-        rarity: "common",
-        quantity: 3,
-        effects: { healthBoost: 50 },
-      },
-    ],
-    rewards: [
-      {
-        id: "reward_1",
-        title: "Watch a Movie",
-        description: "Enjoy a 2-hour movie break",
-        cost: 200,
-        category: "entertainment",
-        claimed: false,
-      },
-      {
-        id: "reward_2",
-        title: "Favorite Snack",
-        description: "Treat yourself to your favorite snack",
-        cost: 150,
-        category: "food",
-        claimed: false,
-      },
-    ],
-    achievements: [
-      {
-        id: "first_quest",
-        title: "First Steps",
-        description: "Complete your first quest",
-        icon: "🎯",
-        progress: 0,
-        maxProgress: 1,
-        xpReward: 100,
-        category: "quests",
-      },
-      {
-        id: "daily_warrior",
-        title: "Daily Warrior",
-        description: "Complete 7 daily missions in a row",
-        icon: "⚔️",
-        progress: 0,
-        maxProgress: 7,
-        xpReward: 300,
-        category: "daily",
-      },
-    ],
-    stats: {
-      totalXpEarned: 0,
-      questsCompleted: 0,
-      dailyMissionsCompleted: 0,
-      currentStreak: 0,
-      longestStreak: 0,
-      achievementsUnlocked: 0,
-      totalPlayTime: 0,
-      joinDate: now,
-    },
-    settings: {
-      notifications: true,
-      soundEffects: true,
-      darkMode: true,
-      autoSync: true,
-    },
-    lastUpdated: now,
-    createdAt: now,
-  }
-}
-
-export function calculateLevel(xp: number): { level: number; xpToNextLevel: number } {
+export const calculateLevel = (xp: number): { level: number; xpToNextLevel: number } => {
   let level = 1
-  let totalXpForLevel = 0
+  let totalXpNeeded = 0
   let xpForNextLevel = 100
 
-  while (xp >= totalXpForLevel + xpForNextLevel) {
-    totalXpForLevel += xpForNextLevel
+  while (totalXpNeeded + xpForNextLevel <= xp) {
+    totalXpNeeded += xpForNextLevel
     level++
     xpForNextLevel = Math.floor(100 * Math.pow(1.2, level - 1))
   }
 
-  const xpToNextLevel = xpForNextLevel - (xp - totalXpForLevel)
-  return { level, xpToNextLevel }
+  return {
+    level,
+    xpToNextLevel: xpForNextLevel - (xp - totalXpNeeded),
+  }
 }
 
-export function getRankFromLevel(level: number): string {
+export const getRankFromLevel = (level: number): string => {
   if (level >= 100) return "SSS"
   if (level >= 80) return "SS"
   if (level >= 60) return "S"
-  if (level >= 40) return "A"
-  if (level >= 25) return "B"
-  if (level >= 15) return "C"
-  if (level >= 8) return "D"
-  if (level >= 3) return "E"
+  if (level >= 45) return "A"
+  if (level >= 30) return "B"
+  if (level >= 20) return "C"
+  if (level >= 10) return "D"
+  if (level >= 5) return "E"
   return "F"
 }
 
-export function getTitleFromLevel(level: number): string {
+export const getTitleFromLevel = (level: number): string => {
   if (level >= 100) return "Legendary Hunter"
   if (level >= 80) return "Master Hunter"
   if (level >= 60) return "Expert Hunter"
-  if (level >= 40) return "Veteran Hunter"
-  if (level >= 25) return "Skilled Hunter"
-  if (level >= 15) return "Experienced Hunter"
-  if (level >= 8) return "Apprentice Hunter"
-  if (level >= 3) return "Junior Hunter"
+  if (level >= 45) return "Veteran Hunter"
+  if (level >= 30) return "Skilled Hunter"
+  if (level >= 20) return "Experienced Hunter"
+  if (level >= 10) return "Junior Hunter"
+  if (level >= 5) return "Apprentice Hunter"
   return "Novice Hunter"
-}
-
-export function migratePlayerData(data: any): Player {
-  const defaultPlayer = createDefaultPlayer(data.name || "Hunter")
-
-  return {
-    ...defaultPlayer,
-    ...data,
-    // Ensure required fields exist
-    id: data.id || defaultPlayer.id,
-    stats: { ...defaultPlayer.stats, ...data.stats },
-    settings: { ...defaultPlayer.settings, ...data.settings },
-    achievements: data.achievements || defaultPlayer.achievements,
-    lastUpdated: new Date().toISOString(),
-  }
 }

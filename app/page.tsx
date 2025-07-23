@@ -1,47 +1,38 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { IntroScreen } from "@/components/intro-screen"
 import { GameLayout } from "@/components/game-layout"
-import { ErrorBoundary } from "@/components/error-boundary"
-import { NotificationProvider } from "@/components/notification-provider"
-import { LevelUpProvider } from "@/components/level-up-provider"
-import { BackgroundEffects } from "@/components/background-effects"
+import { IntroScreen } from "@/components/intro-screen"
 import { useLocalStorage } from "@/hooks/use-local-storage"
 import { createDefaultPlayer, type Player } from "@/lib/player"
 import { usePlayerSync } from "@/hooks/use-player-sync"
+import { ErrorBoundary } from "@/components/error-boundary"
+import { NotificationProvider } from "@/components/notification-provider"
+import { LevelUpProvider } from "@/components/level-up-provider"
 
 export default function Home() {
   const [player, setPlayer] = useLocalStorage<Player>("player", createDefaultPlayer())
   const [showIntro, setShowIntro] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const { loadFromCloud, markUnsyncedChanges, isConfigured } = usePlayerSync()
 
-  const { syncToCloud, loadFromCloud, manualSync, syncStatus, isConfigured } = usePlayerSync()
-
-  // Initialize app and check for cloud data
+  // Initialize the app
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Check if this is the first time opening the app
+        // Check if this is a first-time user
         const hasSeenIntro = localStorage.getItem("hasSeenIntro")
 
-        if (!hasSeenIntro && !player.name) {
+        if (!hasSeenIntro) {
           setShowIntro(true)
-          setIsLoading(false)
-          return
+          localStorage.setItem("hasSeenIntro", "true")
         }
 
         // Try to load from cloud if configured
         if (isConfigured) {
-          const cloudData = await loadFromCloud()
-          if (cloudData && cloudData.lastUpdated) {
-            // Compare timestamps to see which is newer
-            const localTime = new Date(player.lastUpdated || 0).getTime()
-            const cloudTime = new Date(cloudData.lastUpdated).getTime()
-
-            if (cloudTime > localTime) {
-              setPlayer(cloudData)
-            }
+          const cloudPlayer = await loadFromCloud()
+          if (cloudPlayer) {
+            setPlayer(cloudPlayer)
           }
         }
       } catch (error) {
@@ -52,35 +43,27 @@ export default function Home() {
     }
 
     initializeApp()
-  }, []) // Empty dependency array to run only once
+  }, [isConfigured, loadFromCloud, setPlayer])
 
-  // Auto-sync when player data changes (but not on initial load)
-  useEffect(() => {
-    if (!isLoading && player.name && player.lastUpdated) {
-      syncToCloud(player)
-    }
-  }, [player, syncToCloud, isLoading])
-
-  const handleIntroComplete = (playerName: string) => {
-    const newPlayer = createDefaultPlayer(playerName)
-    setPlayer(newPlayer)
-    setShowIntro(false)
-    localStorage.setItem("hasSeenIntro", "true")
+  const handlePlayerUpdate = (updatedPlayer: Player) => {
+    setPlayer(updatedPlayer)
+    markUnsyncedChanges()
   }
 
-  const handleUpdatePlayer = (updates: Partial<Player>) => {
-    setPlayer((prev) => ({
-      ...prev,
-      ...updates,
-      lastUpdated: new Date().toISOString(),
-    }))
+  const handleIntroComplete = (playerName: string) => {
+    const newPlayer = {
+      ...createDefaultPlayer(),
+      name: playerName,
+    }
+    setPlayer(newPlayer)
+    setShowIntro(false)
   }
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="loading-spinner mx-auto"></div>
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-primary font-orbitron">Initializing Hunter Protocol...</p>
         </div>
       </div>
@@ -88,26 +71,14 @@ export default function Home() {
   }
 
   if (showIntro) {
-    return (
-      <ErrorBoundary>
-        <BackgroundEffects />
-        <IntroScreen onComplete={handleIntroComplete} />
-      </ErrorBoundary>
-    )
+    return <IntroScreen onComplete={handleIntroComplete} />
   }
 
   return (
     <ErrorBoundary>
       <NotificationProvider>
         <LevelUpProvider>
-          <BackgroundEffects />
-          <GameLayout
-            player={player}
-            onUpdatePlayer={handleUpdatePlayer}
-            syncStatus={syncStatus}
-            onManualSync={() => manualSync(player)}
-            isSupabaseConfigured={isConfigured}
-          />
+          <GameLayout player={player} onPlayerUpdate={handlePlayerUpdate} />
         </LevelUpProvider>
       </NotificationProvider>
     </ErrorBoundary>
