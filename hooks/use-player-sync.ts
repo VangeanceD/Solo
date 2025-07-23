@@ -1,190 +1,172 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import {
-  savePlayerData,
-  loadPlayerData,
-  getDeviceId,
-  isOnline,
-  isSupabaseConfigured,
-  testSupabaseConnection,
-} from "@/lib/supabase"
+import { useState, useEffect, useCallback, useRef } from "react"
+import { savePlayerData, loadPlayerData, isSupabaseConfigured } from "@/lib/supabase"
 import type { Player } from "@/lib/player"
 
+export interface SyncStatus {
+  isOnline: boolean
+  lastSync: Date | null
+  isLoading: boolean
+  error: string | null
+  hasUnsyncedChanges: boolean
+}
+
 export function usePlayerSync() {
-  const [isSyncing, setIsSyncing] = useState(false)
-  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null)
-  const [syncError, setSyncError] = useState<string | null>(null)
-  const [isConfigured, setIsConfigured] = useState(false)
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>({
+    isOnline: false,
+    lastSync: null,
+    isLoading: false,
+    error: null,
+    hasUnsyncedChanges: false,
+  })
 
-  const deviceId = getDeviceId()
+  const deviceIdRef = useRef<string>("")
+  const syncTimeoutRef = useRef<NodeJS.Timeout>()
 
-  // Check if Supabase is configured
+  // Initialize device ID
   useEffect(() => {
-    setIsConfigured(isSupabaseConfigured())
+    if (typeof window === "undefined") return
+
+    let deviceId = localStorage.getItem("device_id")
+    if (!deviceId) {
+      deviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      localStorage.setItem("device_id", deviceId)
+    }
+    deviceIdRef.current = deviceId
   }, [])
 
-  // Save player data to cloud
-  const syncToCloud = useCallback(
-    async (playerData: Player) => {
-      if (!isConfigured) {
-        setSyncError("Cloud sync not configured")
-        return { success: false, error: "not_configured" }
+  // Check if Supabase is configured and update status
+  useEffect(() => {
+    const checkConfiguration = () => {
+      const isConfigured = isSupabaseConfigured()
+      setSyncStatus((prev) => ({
+        ...prev,
+        isOnline: isConfigured,
+        error: isConfigured ? null : "Cloud sync not configured",
+      }))
+    }
+
+    checkConfiguration()
+
+    // Listen for storage changes (when user configures Supabase in another tab)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "supabase_url" || e.key === "supabase_key") {
+        checkConfiguration()
       }
+    }
 
-      if (!isOnline()) {
-        setSyncError("Offline - will sync when connection is restored")
-        return { success: false, error: "offline" }
-      }
+    window.addEventListener("storage", handleStorageChange)
+    return () => window.removeEventListener("storage", handleStorageChange)
+  }, [])
 
-      setIsSyncing(true)
-      setSyncError(null)
+  // Sync player data to cloud
+  const syncToCloud = useCallback(async (playerData: Player): Promise<boolean> => {
+    if (!isSupabaseConfigured() || !deviceIdRef.current) {
+      setSyncStatus((prev) => ({ ...prev, error: "Sync not configured" }))
+      return false
+    }
 
-      try {
-        const result = await savePlayerData(deviceId, playerData)
+    setSyncStatus((prev) => ({ ...prev, isLoading: true, error: null }))
 
-        if (result.success) {
-          setLastSyncTime(new Date().toISOString())
-          setSyncError(null)
+    try {
+      await savePlayerData(deviceIdRef.current, playerData)
 
-          // Also save to localStorage as backup
-          localStorage.setItem("player", JSON.stringify(playerData))
-          localStorage.setItem("lastSync", new Date().toISOString())
+      setSyncStatus((prev) => ({
+        ...prev,
+        isLoading: false,
+        lastSync: new Date(),
+        hasUnsyncedChanges: false,
+        error: null,
+      }))
 
-          return { success: true }
-        } else {
-          setSyncError("Failed to sync to cloud")
-          return { success: false, error: result.error }
-        }
-      } catch (error) {
-        setSyncError("Sync failed - check your connection")
-        return { success: false, error }
-      } finally {
-        setIsSyncing(false)
-      }
-    },
-    [deviceId, isConfigured],
-  )
+      return true
+    } catch (error) {
+      console.error("Sync to cloud failed:", error)
+      setSyncStatus((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: error instanceof Error ? error.message : "Sync failed",
+        hasUnsyncedChanges: true,
+      }))
+      return false
+    }
+  }, [])
 
   // Load player data from cloud
-  const syncFromCloud = useCallback(async () => {
-    if (!isConfigured) {
-      setSyncError("Cloud sync not configured")
-      return { success: false, error: "not_configured" }
+  const loadFromCloud = useCallback(async (): Promise<Player | null> => {
+    if (!isSupabaseConfigured() || !deviceIdRef.current) {
+      setSyncStatus((prev) => ({ ...prev, error: "Sync not configured" }))
+      return null
     }
 
-    if (!isOnline()) {
-      setSyncError("Offline - using local data")
-      return { success: false, error: "offline" }
-    }
-
-    setIsSyncing(true)
-    setSyncError(null)
+    setSyncStatus((prev) => ({ ...prev, isLoading: true, error: null }))
 
     try {
-      const result = await loadPlayerData(deviceId)
+      const result = await loadPlayerData(deviceIdRef.current)
 
-      if (result.success && result.data) {
-        setLastSyncTime(new Date().toISOString())
-        setSyncError(null)
+      setSyncStatus((prev) => ({
+        ...prev,
+        isLoading: false,
+        lastSync: new Date(),
+        error: result.success ? null : result.error || "Load failed",
+      }))
 
-        // Also save to localStorage
-        localStorage.setItem("player", JSON.stringify(result.data))
-        localStorage.setItem("lastSync", new Date().toISOString())
-
-        return { success: true, data: result.data }
-      } else {
-        return { success: false, error: result.error }
-      }
+      return result.success ? result.data || null : null
     } catch (error) {
-      setSyncError("Failed to load from cloud")
-      return { success: false, error }
-    } finally {
-      setIsSyncing(false)
+      console.error("Load from cloud failed:", error)
+      setSyncStatus((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: error instanceof Error ? error.message : "Load failed",
+      }))
+      return null
     }
-  }, [deviceId, isConfigured])
-
-  // Test connection
-  const testConnection = useCallback(async () => {
-    if (!isConfigured) {
-      return { success: false, error: "not_configured" }
-    }
-
-    setIsSyncing(true)
-    setSyncError(null)
-
-    try {
-      const result = await testSupabaseConnection()
-      if (result.success) {
-        setSyncError(null)
-        return { success: true }
-      } else {
-        setSyncError("Connection test failed")
-        return { success: false, error: result.error }
-      }
-    } catch (error) {
-      setSyncError("Connection test failed")
-      return { success: false, error }
-    } finally {
-      setIsSyncing(false)
-    }
-  }, [isConfigured])
-
-  // Update configuration status
-  const updateConfiguration = useCallback(() => {
-    setIsConfigured(isSupabaseConfigured())
-    setSyncError(null)
   }, [])
 
-  // Auto-sync when coming online
-  useEffect(() => {
-    const handleOnline = () => {
-      if (isConfigured) {
-        setSyncError(null)
-        // Try to sync when coming back online
-        const localPlayer = localStorage.getItem("player")
-        if (localPlayer) {
-          try {
-            const playerData = JSON.parse(localPlayer)
-            syncToCloud(playerData)
-          } catch (error) {
-            console.error("Error parsing local player data:", error)
-          }
-        }
+  // Debounced sync function
+  const debouncedSync = useCallback(
+    (playerData: Player) => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current)
       }
-    }
 
-    const handleOffline = () => {
-      setSyncError("Offline - changes will sync when connection is restored")
-    }
+      setSyncStatus((prev) => ({ ...prev, hasUnsyncedChanges: true }))
 
-    window.addEventListener("online", handleOnline)
-    window.addEventListener("offline", handleOffline)
+      syncTimeoutRef.current = setTimeout(() => {
+        if (isSupabaseConfigured()) {
+          syncToCloud(playerData)
+        }
+      }, 2000) // 2 second debounce
+    },
+    [syncToCloud],
+  )
 
-    return () => {
-      window.removeEventListener("online", handleOnline)
-      window.removeEventListener("offline", handleOffline)
-    }
-  }, [syncToCloud, isConfigured])
+  // Manual sync function
+  const manualSync = useCallback(
+    async (playerData: Player): Promise<boolean> => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current)
+      }
+      return await syncToCloud(playerData)
+    },
+    [syncToCloud],
+  )
 
-  // Initialize last sync time from localStorage
+  // Cleanup timeout on unmount
   useEffect(() => {
-    const lastSync = localStorage.getItem("lastSync")
-    if (lastSync) {
-      setLastSyncTime(lastSync)
+    return () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current)
+      }
     }
   }, [])
 
   return {
-    syncToCloud,
-    syncFromCloud,
-    testConnection,
-    updateConfiguration,
-    isSyncing,
-    lastSyncTime,
-    syncError,
-    deviceId,
-    isOnline: isOnline(),
-    isConfigured,
+    syncStatus,
+    syncToCloud: debouncedSync,
+    loadFromCloud,
+    manualSync,
+    isConfigured: isSupabaseConfigured(),
   }
 }

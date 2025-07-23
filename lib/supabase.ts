@@ -1,193 +1,155 @@
-import { createClient } from "@supabase/supabase-js"
+import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 import type { Player } from "./player"
 
-// Check if Supabase credentials are available
-const getSupabaseCredentials = () => {
-  if (typeof window !== "undefined") {
-    // Client-side: check localStorage first, then env vars
-    const storedUrl = localStorage.getItem("supabase_url")
-    const storedKey = localStorage.getItem("supabase_key")
+let supabaseClient: SupabaseClient | null = null
 
-    if (storedUrl && storedKey) {
-      return { url: storedUrl, key: storedKey }
+export function createSupabaseClient(url: string, key: string): SupabaseClient | null {
+  try {
+    if (!url || !key) {
+      console.error("Supabase URL and key are required")
+      return null
     }
+
+    const client = createClient(url, key, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    })
+
+    return client
+  } catch (error) {
+    console.error("Failed to create Supabase client:", error)
+    return null
   }
-
-  // Fallback to environment variables
-  const envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const envKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (envUrl && envKey) {
-    return { url: envUrl, key: envKey }
-  }
-
-  return null
 }
 
-// Create Supabase client only if credentials are available
-let supabase: ReturnType<typeof createClient> | null = null
+export function initializeSupabase(): SupabaseClient | null {
+  if (typeof window === "undefined") return null
 
-const initializeSupabase = () => {
-  const credentials = getSupabaseCredentials()
-  if (credentials && !supabase) {
-    try {
-      supabase = createClient(credentials.url, credentials.key)
-    } catch (error) {
-      console.error("Failed to initialize Supabase:", error)
-      supabase = null
+  try {
+    const url = localStorage.getItem("supabase_url")
+    const key = localStorage.getItem("supabase_key")
+
+    if (!url || !key) {
+      return null
     }
+
+    supabaseClient = createSupabaseClient(url, key)
+    return supabaseClient
+  } catch (error) {
+    console.error("Failed to initialize Supabase:", error)
+    return null
   }
-  return supabase
 }
 
-export const getSupabase = () => {
-  return initializeSupabase()
+export function getSupabaseClient(): SupabaseClient | null {
+  if (!supabaseClient) {
+    supabaseClient = initializeSupabase()
+  }
+  return supabaseClient
 }
 
-export interface Database {
-  public: {
-    Tables: {
-      players: {
-        Row: {
-          id: string
-          user_id: string
-          data: Player
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          data: Player
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          data?: Player
-          created_at?: string
-          updated_at?: string
-        }
+export async function testSupabaseConnection(
+  url: string,
+  key: string,
+): Promise<{
+  success: boolean
+  error?: string
+  needsTableSetup?: boolean
+}> {
+  try {
+    const client = createSupabaseClient(url, key)
+    if (!client) {
+      return { success: false, error: "Failed to create client" }
+    }
+
+    // Test basic connection
+    const { error: authError } = await client.auth.getSession()
+    if (authError && authError.message !== "Auth session missing!") {
+      return { success: false, error: authError.message }
+    }
+
+    // Test table access
+    const { error: tableError } = await client.from("players").select("count", { count: "exact", head: true })
+
+    if (tableError) {
+      if (tableError.code === "42P01") {
+        return { success: false, error: "Players table does not exist", needsTableSetup: true }
       }
+      return { success: false, error: tableError.message }
+    }
+
+    return { success: true }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error occurred",
     }
   }
 }
 
-// Save player data to Supabase
-export async function savePlayerData(userId: string, playerData: Player) {
-  try {
-    const supabaseClient = getSupabase()
-    if (!supabaseClient) {
-      return { success: false, error: "Supabase not configured" }
-    }
+export async function savePlayerData(deviceId: string, playerData: Player): Promise<void> {
+  const client = getSupabaseClient()
+  if (!client) {
+    throw new Error("Supabase client not initialized")
+  }
 
-    const { data, error } = await supabaseClient
+  const { error } = await client.from("players").upsert(
+    {
+      device_id: deviceId,
+      player_data: playerData,
+      updated_at: new Date().toISOString(),
+    },
+    {
+      onConflict: "device_id",
+    },
+  )
+
+  if (error) {
+    throw new Error(`Failed to save player data: ${error.message}`)
+  }
+}
+
+export async function loadPlayerData(deviceId: string): Promise<{
+  success: boolean
+  data?: Player
+  error?: string
+}> {
+  const client = getSupabaseClient()
+  if (!client) {
+    return { success: false, error: "Supabase client not initialized" }
+  }
+
+  try {
+    const { data, error } = await client
       .from("players")
-      .upsert({
-        user_id: userId,
-        data: playerData,
-        updated_at: new Date().toISOString(),
-      })
-      .select()
+      .select("player_data, updated_at")
+      .eq("device_id", deviceId)
+      .single()
 
-    if (error) throw error
-    return { success: true, data }
-  } catch (error) {
-    console.error("Error saving player data:", error)
-    return { success: false, error }
-  }
-}
-
-// Load player data from Supabase
-export async function loadPlayerData(userId: string) {
-  try {
-    const supabaseClient = getSupabase()
-    if (!supabaseClient) {
-      return { success: false, error: "Supabase not configured" }
+    if (error) {
+      if (error.code === "PGRST116") {
+        // No data found - this is normal for new users
+        return { success: true, data: undefined }
+      }
+      return { success: false, error: error.message }
     }
 
-    const { data, error } = await supabaseClient.from("players").select("*").eq("user_id", userId).single()
-
-    if (error && error.code !== "PGRST116") throw error
-    return { success: true, data: data?.data || null }
+    return { success: true, data: data.player_data as Player }
   } catch (error) {
-    console.error("Error loading player data:", error)
-    return { success: false, error }
-  }
-}
-
-// Delete player data from Supabase
-export async function deletePlayerData(userId: string) {
-  try {
-    const supabaseClient = getSupabase()
-    if (!supabaseClient) {
-      return { success: false, error: "Supabase not configured" }
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error occurred",
     }
-
-    const { error } = await supabaseClient.from("players").delete().eq("user_id", userId)
-
-    if (error) throw error
-    return { success: true }
-  } catch (error) {
-    console.error("Error deleting player data:", error)
-    return { success: false, error }
   }
 }
 
-// Test Supabase connection
-export async function testSupabaseConnection() {
-  try {
-    const supabaseClient = getSupabase()
-    if (!supabaseClient) {
-      return { success: false, error: "Supabase not configured" }
-    }
-
-    // Try to query the players table
-    const { error } = await supabaseClient.from("players").select("id").limit(1)
-
-    if (error) throw error
-    return { success: true }
-  } catch (error) {
-    console.error("Supabase connection test failed:", error)
-    return { success: false, error }
-  }
-}
-
-// Simple authentication with device ID
-export function getDeviceId(): string {
-  if (typeof window === "undefined") return "server"
-
-  let deviceId = localStorage.getItem("device_id")
-  if (!deviceId) {
-    deviceId = "device_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-    localStorage.setItem("device_id", deviceId)
-  }
-  return deviceId
-}
-
-// Check if online
-export function isOnline(): boolean {
-  return typeof navigator !== "undefined" ? navigator.onLine : true
-}
-
-// Check if Supabase is configured
 export function isSupabaseConfigured(): boolean {
-  return getSupabaseCredentials() !== null
-}
+  if (typeof window === "undefined") return false
 
-// Initialize Supabase with custom credentials
-export function initializeSupabaseWithCredentials(url: string, key: string) {
-  try {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("supabase_url", url)
-      localStorage.setItem("supabase_key", key)
-    }
+  const url = localStorage.getItem("supabase_url")
+  const key = localStorage.getItem("supabase_key")
 
-    supabase = createClient(url, key)
-    return { success: true }
-  } catch (error) {
-    console.error("Failed to initialize Supabase with credentials:", error)
-    return { success: false, error }
-  }
+  return !!(url && key)
 }

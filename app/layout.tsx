@@ -1,51 +1,46 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Rajdhani, Orbitron, Inter } from 'next/font/google'
-import localFont from "next/font/local"
+import { Inter, Orbitron, Rajdhani } from "next/font/google"
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
 
-// Define fonts using next/font
-const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-inter" })
-
-const rajdhani = Rajdhani({
-  weight: ["300", "400", "500", "600", "700"],
+const inter = Inter({
   subsets: ["latin"],
+  variable: "--font-inter",
   display: "swap",
-  variable: "--font-rajdhani",
 })
 
 const orbitron = Orbitron({
-  weight: ["400", "500", "600", "700", "800", "900"],
   subsets: ["latin"],
-  display: "swap",
   variable: "--font-orbitron",
+  display: "swap",
+  weight: ["400", "700", "900"],
 })
 
-// For fonts not available in Google Fonts, we can use local fonts or fallbacks
-const audiowide = localFont({
-  src: "../public/fonts/fallback-fonts.woff2", // This is a fallback, we'll use system fonts
-  variable: "--font-audiowide",
+const rajdhani = Rajdhani({
+  subsets: ["latin"],
+  variable: "--font-rajdhani",
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700"],
 })
 
 export const metadata: Metadata = {
-  title: "ARISE: Hunter Protocol",
-  description: "A real-life RPG system for self-improvement",
+  title: "Arise Hunter Protocol - RPG Life Gamification",
+  description:
+    "Transform your life into an epic RPG adventure. Complete quests, level up, and become the hero of your own story.",
+  keywords: ["RPG", "gamification", "productivity", "self-improvement", "life goals"],
+  authors: [{ name: "Arise Hunter Protocol" }],
+  viewport: "width=device-width, initial-scale=1",
     generator: 'v0.dev'
 }
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${rajdhani.variable} ${orbitron.variable} ${audiowide.variable}`}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          {children}
-        </ThemeProvider>
-      </body>
+    <html lang="en" className={`${inter.variable} ${orbitron.variable} ${rajdhani.variable}`}>
+      <body className="font-inter antialiased bg-black text-white overflow-x-hidden">{children}</body>
     </html>
   )
 }

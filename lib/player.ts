@@ -1,60 +1,40 @@
-// Player types and interfaces
-export interface Stats {
-  strength: number
-  agility: number
-  endurance: number
-  intelligence: number
-  charisma: number
-}
-
-export interface DailyQuest {
-  id: string
-  title: string
-  description: string
-  completed: boolean
-  xp: number
-  timeLimit: number
-  penalty: number
-  isCustom?: boolean
-  createdAt?: string
-}
-
 export interface Quest {
   id: string
   title: string
   description: string
+  xpReward: number
   completed: boolean
-  xp: number
-  timeLimit: number
-  statIncreases: Partial<Stats>
-}
-
-export interface ScheduleItem {
-  id: string
-  time: string
-  title: string
-  description: string
-  completed: boolean
-  priority: "low" | "medium" | "high"
-}
-
-export interface TodoItem {
-  id: string
-  title: string
-  description: string
-  category: "urgent" | "school" | "personal" | "work" | "health" | "other"
-  priority: "low" | "medium" | "high"
-  completed: boolean
-  dueDate?: string
   createdAt: string
+  completedAt?: string
+  category: "fitness" | "study" | "work" | "personal" | "health" | "creative"
+  priority: "low" | "medium" | "high"
+  difficulty: "easy" | "medium" | "hard"
+  timeEstimate?: number // in minutes
 }
 
-export interface WorkoutMiss {
+export interface DailyMission {
   id: string
-  date: string
-  reason: string
-  xpLost: number
-  acknowledged: boolean
+  title: string
+  description: string
+  xpReward: number
+  completed: boolean
+  streak: number
+  lastCompleted?: string
+  category: "fitness" | "study" | "work" | "personal" | "health" | "creative"
+}
+
+export interface InventoryItem {
+  id: string
+  name: string
+  description: string
+  type: "consumable" | "equipment" | "collectible"
+  rarity: "common" | "rare" | "epic" | "legendary"
+  quantity: number
+  effects?: {
+    xpBoost?: number
+    healthBoost?: number
+    energyBoost?: number
+  }
 }
 
 export interface Reward {
@@ -62,16 +42,32 @@ export interface Reward {
   title: string
   description: string
   cost: number
-  used: boolean
+  category: "entertainment" | "food" | "shopping" | "experience" | "custom"
+  claimed: boolean
+  claimedAt?: string
 }
 
-export interface InventoryItem {
+export interface Achievement {
   id: string
-  name: string
+  title: string
   description: string
-  type: string
-  effect: string
-  equipped: boolean
+  icon: string
+  unlockedAt?: string
+  progress: number
+  maxProgress: number
+  xpReward: number
+  category: "quests" | "daily" | "social" | "progression" | "special"
+}
+
+export interface PlayerStats {
+  totalXpEarned: number
+  questsCompleted: number
+  dailyMissionsCompleted: number
+  currentStreak: number
+  longestStreak: number
+  achievementsUnlocked: number
+  totalPlayTime: number // in minutes
+  joinDate: string
 }
 
 export interface Player {
@@ -80,215 +76,188 @@ export interface Player {
   level: number
   xp: number
   xpToNextLevel: number
-  stats: Stats
-  quests: Quest[]
-  dailyQuests: DailyQuest[]
-  schedule?: ScheduleItem[] // Make optional for backward compatibility
-  todoList?: TodoItem[] // Make optional for backward compatibility
-  workoutMisses?: WorkoutMiss[] // Make optional for backward compatibility
-  rewards: Reward[]
-  inventory: InventoryItem[]
-  title: string
   avatar: string
-  createdAt: string
-  lastLogin: string
+  title: string
+  rank: string
+  health: number
+  maxHealth: number
+  energy: number
+  maxEnergy: number
+  quests: Quest[]
+  dailyMissions: DailyMission[]
+  inventory: InventoryItem[]
+  rewards: Reward[]
+  achievements: Achievement[]
+  stats: PlayerStats
   settings: {
-    theme: string
     notifications: boolean
-    sound: boolean
-    workoutPenalty?: number // Make optional for backward compatibility
+    soundEffects: boolean
+    darkMode: boolean
+    autoSync: boolean
   }
+  lastUpdated: string
+  createdAt: string
 }
 
-// Create a default player with initial values
-export function createDefaultPlayer(name: string): Player {
+export function createDefaultPlayer(name = "Hunter"): Player {
   const now = new Date().toISOString()
 
   return {
-    id: generateId(),
+    id: `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     name,
     level: 1,
     xp: 0,
     xpToNextLevel: 100,
-    stats: {
-      strength: 10,
-      agility: 10,
-      endurance: 10,
-      intelligence: 10,
-      charisma: 10,
-    },
-    quests: [
+    avatar: "/placeholder.svg?height=100&width=100&text=Avatar",
+    title: "Novice Hunter",
+    rank: "F",
+    health: 100,
+    maxHealth: 100,
+    energy: 100,
+    maxEnergy: 100,
+    quests: [],
+    dailyMissions: [
       {
-        id: generateId(),
-        title: "Complete Your First Workout",
-        description: "Finish a 30-minute workout session to boost your physical stats and start your fitness journey",
+        id: "daily_1",
+        title: "Morning Exercise",
+        description: "Complete 30 minutes of physical activity",
+        xpReward: 50,
         completed: false,
-        xp: 50,
-        timeLimit: 60,
-        statIncreases: {
-          strength: 2,
-          endurance: 1,
-        },
+        streak: 0,
+        category: "fitness",
       },
       {
-        id: generateId(),
-        title: "Read for Knowledge",
-        description: "Spend 30 minutes reading a book, article, or educational content to expand your mind",
+        id: "daily_2",
+        title: "Learn Something New",
+        description: "Spend 20 minutes learning a new skill",
+        xpReward: 40,
         completed: false,
-        xp: 40,
-        timeLimit: 45,
-        statIncreases: {
-          intelligence: 2,
-        },
-      },
-      {
-        id: generateId(),
-        title: "Practice Mindfulness",
-        description: "Meditate or practice mindfulness for 15 minutes to improve your mental clarity and charisma",
-        completed: false,
-        xp: 35,
-        timeLimit: 20,
-        statIncreases: {
-          charisma: 1,
-          intelligence: 1,
-        },
-      },
-    ],
-    dailyQuests: [
-      {
-        id: generateId(),
-        title: "Hydration Hero",
-        description: "Drink at least 8 glasses of water throughout the day to stay properly hydrated",
-        completed: false,
-        xp: 25,
-        timeLimit: 720,
-        penalty: 10,
-        isCustom: false,
-      },
-      {
-        id: generateId(),
-        title: "Fresh Air Walk",
-        description: "Take a 15-minute walk outside to get fresh air and light exercise",
-        completed: false,
-        xp: 20,
-        timeLimit: 20,
-        penalty: 5,
-        isCustom: false,
-      },
-    ],
-    schedule: [
-      {
-        id: generateId(),
-        time: "07:00",
-        title: "Morning Routine",
-        description: "Wake up, brush teeth, drink water",
-        completed: false,
-        priority: "high",
-      },
-      {
-        id: generateId(),
-        time: "08:00",
-        title: "Breakfast",
-        description: "Healthy breakfast with protein and fruits",
-        completed: false,
-        priority: "high",
-      },
-      {
-        id: generateId(),
-        time: "18:00",
-        title: "Workout Time",
-        description: "30-45 minute workout session",
-        completed: false,
-        priority: "high",
-      },
-    ],
-    todoList: [
-      {
-        id: generateId(),
-        title: "Complete project assignment",
-        description: "Finish the math project due tomorrow",
-        category: "school",
-        priority: "high",
-        completed: false,
-        dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        createdAt: now,
-      },
-      {
-        id: generateId(),
-        title: "Call family",
-        description: "Check in with parents and siblings",
-        category: "personal",
-        priority: "medium",
-        completed: false,
-        createdAt: now,
-      },
-    ],
-    workoutMisses: [],
-    rewards: [
-      {
-        id: generateId(),
-        title: "Gaming Session",
-        description: "Enjoy 1 hour of guilt-free gaming time",
-        cost: 50,
-        used: false,
-      },
-      {
-        id: generateId(),
-        title: "Movie Night",
-        description: "Watch a movie of your choice with snacks",
-        cost: 100,
-        used: false,
-      },
-      {
-        id: generateId(),
-        title: "Favorite Treat",
-        description: "Treat yourself to your favorite snack or dessert",
-        cost: 75,
-        used: false,
+        streak: 0,
+        category: "study",
       },
     ],
     inventory: [
       {
-        id: generateId(),
-        name: "Hunter's Manual",
-        description: "A comprehensive guide to help you navigate your self-improvement journey",
-        type: "guide",
-        effect: "Provides tips and motivation for beginners",
-        equipped: false,
+        id: "starter_potion",
+        name: "Starter Health Potion",
+        description: "Restores 50 health points",
+        type: "consumable",
+        rarity: "common",
+        quantity: 3,
+        effects: { healthBoost: 50 },
       },
     ],
-    title: "Novice Hunter",
-    avatar: "/avatars/default.png",
-    createdAt: now,
-    lastLogin: now,
-    settings: {
-      theme: "dark",
-      notifications: true,
-      sound: true,
-      workoutPenalty: 25,
+    rewards: [
+      {
+        id: "reward_1",
+        title: "Watch a Movie",
+        description: "Enjoy a 2-hour movie break",
+        cost: 200,
+        category: "entertainment",
+        claimed: false,
+      },
+      {
+        id: "reward_2",
+        title: "Favorite Snack",
+        description: "Treat yourself to your favorite snack",
+        cost: 150,
+        category: "food",
+        claimed: false,
+      },
+    ],
+    achievements: [
+      {
+        id: "first_quest",
+        title: "First Steps",
+        description: "Complete your first quest",
+        icon: "🎯",
+        progress: 0,
+        maxProgress: 1,
+        xpReward: 100,
+        category: "quests",
+      },
+      {
+        id: "daily_warrior",
+        title: "Daily Warrior",
+        description: "Complete 7 daily missions in a row",
+        icon: "⚔️",
+        progress: 0,
+        maxProgress: 7,
+        xpReward: 300,
+        category: "daily",
+      },
+    ],
+    stats: {
+      totalXpEarned: 0,
+      questsCompleted: 0,
+      dailyMissionsCompleted: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      achievementsUnlocked: 0,
+      totalPlayTime: 0,
+      joinDate: now,
     },
+    settings: {
+      notifications: true,
+      soundEffects: true,
+      darkMode: true,
+      autoSync: true,
+    },
+    lastUpdated: now,
+    createdAt: now,
   }
 }
 
-// Helper function to generate unique IDs
-function generateId(): string {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+export function calculateLevel(xp: number): { level: number; xpToNextLevel: number } {
+  let level = 1
+  let totalXpForLevel = 0
+  let xpForNextLevel = 100
+
+  while (xp >= totalXpForLevel + xpForNextLevel) {
+    totalXpForLevel += xpForNextLevel
+    level++
+    xpForNextLevel = Math.floor(100 * Math.pow(1.2, level - 1))
+  }
+
+  const xpToNextLevel = xpForNextLevel - (xp - totalXpForLevel)
+  return { level, xpToNextLevel }
 }
 
-// Migration function to update existing player data
-export function migratePlayerData(player: any): Player {
+export function getRankFromLevel(level: number): string {
+  if (level >= 100) return "SSS"
+  if (level >= 80) return "SS"
+  if (level >= 60) return "S"
+  if (level >= 40) return "A"
+  if (level >= 25) return "B"
+  if (level >= 15) return "C"
+  if (level >= 8) return "D"
+  if (level >= 3) return "E"
+  return "F"
+}
+
+export function getTitleFromLevel(level: number): string {
+  if (level >= 100) return "Legendary Hunter"
+  if (level >= 80) return "Master Hunter"
+  if (level >= 60) return "Expert Hunter"
+  if (level >= 40) return "Veteran Hunter"
+  if (level >= 25) return "Skilled Hunter"
+  if (level >= 15) return "Experienced Hunter"
+  if (level >= 8) return "Apprentice Hunter"
+  if (level >= 3) return "Junior Hunter"
+  return "Novice Hunter"
+}
+
+export function migratePlayerData(data: any): Player {
+  const defaultPlayer = createDefaultPlayer(data.name || "Hunter")
+
   return {
-    ...player,
-    schedule: player.schedule || [],
-    todoList: player.todoList || [],
-    workoutMisses: player.workoutMisses || [],
-    settings: {
-      ...player.settings,
-      workoutPenalty: player.settings?.workoutPenalty || 25,
-    },
-    dailyQuests: (player.dailyQuests || []).map((quest: any) => ({
-      ...quest,
-      isCustom: quest.isCustom || false,
-    })),
+    ...defaultPlayer,
+    ...data,
+    // Ensure required fields exist
+    id: data.id || defaultPlayer.id,
+    stats: { ...defaultPlayer.stats, ...data.stats },
+    settings: { ...defaultPlayer.settings, ...data.settings },
+    achievements: data.achievements || defaultPlayer.achievements,
+    lastUpdated: new Date().toISOString(),
   }
 }
