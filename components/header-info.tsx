@@ -2,14 +2,22 @@
 
 import { Progress } from "@/components/ui/progress"
 import { MotivationalQuotes } from "@/components/motivational-quotes"
+import { SyncStatus } from "@/components/sync-status"
+import { usePlayerSync } from "@/hooks/use-player-sync"
 import type { Player } from "@/lib/player"
 
 interface HeaderInfoProps {
   player: Player
+  onPlayerUpdate: (player: Player) => void
 }
 
-export function HeaderInfo({ player }: HeaderInfoProps) {
+export function HeaderInfo({ player, onPlayerUpdate }: HeaderInfoProps) {
+  const { syncToCloud, isSyncing, lastSyncTime, syncError, isOnline } = usePlayerSync()
   const xpPercentage = (player.xp / player.xpToNextLevel) * 100
+
+  const handleManualSync = async () => {
+    await syncToCloud(player)
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6 mb-6">
@@ -18,7 +26,16 @@ export function HeaderInfo({ player }: HeaderInfoProps) {
         <div className="holographic-header">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
             <span className="font-michroma text-sm">Hunter Status</span>
-            <span className="text-primary/70 font-orbitron text-xs sm:text-sm">{player.title}</span>
+            <div className="flex items-center justify-between sm:justify-end gap-4">
+              <span className="text-primary/70 font-orbitron text-xs sm:text-sm">{player.title}</span>
+              <SyncStatus
+                isSyncing={isSyncing}
+                lastSyncTime={lastSyncTime}
+                syncError={syncError}
+                isOnline={isOnline}
+                onManualSync={handleManualSync}
+              />
+            </div>
           </div>
         </div>
 
