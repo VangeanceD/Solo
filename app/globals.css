@@ -118,8 +118,7 @@
   }
 
   .holographic-ui {
-    @apply relative bg-black/85 border border-primary/50 rounded-none overflow-hidden;
-    box-shadow: 0 0 15px rgba(0, 168, 255, 0.3);
+    @apply relative bg-black/85 border border-primary/50 rounded-none shadow-[0_0_15px_rgba(0,168,255,0.3)] overflow-hidden;
   }
 
   .holographic-ui::before {
@@ -145,8 +144,7 @@
   }
 
   .level-badge {
-    @apply bg-gradient-to-br from-primary/20 to-secondary/40 border border-primary/30;
-    box-shadow: 0 0 10px rgba(0, 168, 255, 0.2);
+    @apply bg-gradient-to-br from-primary/20 to-secondary/40 border border-primary/30 shadow-[0_0_10px_rgba(0,168,255,0.2)];
   }
 
   .solo-text {
@@ -171,8 +169,7 @@
   }
 
   .quest-card:hover {
-    @apply -translate-y-1;
-    box-shadow: 0 10px 20px rgba(0, 168, 255, 0.2);
+    @apply -translate-y-1 shadow-[0_10px_20px_rgba(0,168,255,0.2)];
   }
 
   .quest-card::before {

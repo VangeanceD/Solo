@@ -1,84 +1,101 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { GameLayout } from "@/components/game-layout"
+import { IntroAnimation } from "@/components/intro-animation"
 import { IntroScreen } from "@/components/intro-screen"
+import { GameLayout } from "@/components/game-layout"
+import { type Player, createDefaultPlayer, migratePlayerData } from "@/lib/player"
 import { useLocalStorage } from "@/hooks/use-local-storage"
-import { createDefaultPlayer, type Player } from "@/lib/player"
-import { usePlayerSync } from "@/hooks/use-player-sync"
-import { ErrorBoundary } from "@/components/error-boundary"
 import { NotificationProvider } from "@/components/notification-provider"
 import { LevelUpProvider } from "@/components/level-up-provider"
+import { ErrorBoundary } from "@/components/error-boundary"
 
-export default function Home() {
-  const [player, setPlayer] = useLocalStorage<Player>("player", createDefaultPlayer())
-  const [showIntro, setShowIntro] = useState(false)
+export default function Page() {
+  const [introCompleted, setIntroCompleted] = useState(false)
+  const [player, setPlayer] = useLocalStorage<Player | null>("player", null)
+  const [showIntro, setShowIntro] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
-  const { loadFromCloud, markUnsyncedChanges, isConfigured } = usePlayerSync()
 
-  // Initialize the app
   useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        // Check if this is a first-time user
-        const hasSeenIntro = localStorage.getItem("hasSeenIntro")
-
-        if (!hasSeenIntro) {
-          setShowIntro(true)
-          localStorage.setItem("hasSeenIntro", "true")
-        }
-
-        // Try to load from cloud if configured
-        if (isConfigured) {
-          const cloudPlayer = await loadFromCloud()
-          if (cloudPlayer) {
-            setPlayer(cloudPlayer)
-          }
-        }
-      } catch (error) {
-        console.error("Failed to initialize app:", error)
-      } finally {
-        setIsLoading(false)
+    try {
+      // Check if we should skip intro animation
+      const skipIntro = localStorage.getItem("skipIntro")
+      if (skipIntro) {
+        setIntroCompleted(true)
+        setShowIntro(false)
       }
+
+      // Check for existing player data and migrate if needed
+      const existingPlayerData = localStorage.getItem("player")
+      if (existingPlayerData) {
+        try {
+          const parsedPlayer = JSON.parse(existingPlayerData)
+          const migratedPlayer = migratePlayerData(parsedPlayer)
+          setPlayer(migratedPlayer)
+        } catch (migrationError) {
+          console.error("Error migrating player data:", migrationError)
+          // If migration fails, clear the data and start fresh
+          localStorage.removeItem("player")
+        }
+      }
+    } catch (error) {
+      console.error("Error accessing localStorage:", error)
+    } finally {
+      setIsLoading(false)
     }
+  }, [])
 
-    initializeApp()
-  }, [isConfigured, loadFromCloud, setPlayer])
-
-  const handlePlayerUpdate = (updatedPlayer: Player) => {
-    setPlayer(updatedPlayer)
-    markUnsyncedChanges()
+  const handleIntroComplete = () => {
+    setIntroCompleted(true)
+    try {
+      localStorage.setItem("skipIntro", "true")
+    } catch (error) {
+      console.error("Error setting localStorage:", error)
+    }
   }
 
-  const handleIntroComplete = (playerName: string) => {
-    const newPlayer = {
-      ...createDefaultPlayer(),
-      name: playerName,
+  const handlePlayerCreation = (name: string) => {
+    try {
+      const newPlayer = createDefaultPlayer(name)
+      setPlayer(newPlayer)
+    } catch (error) {
+      console.error("Error creating player:", error)
     }
-    setPlayer(newPlayer)
-    setShowIntro(false)
+  }
+
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem("player")
+      localStorage.removeItem("skipIntro")
+      setPlayer(null)
+      setIntroCompleted(false)
+      setShowIntro(true)
+    } catch (error) {
+      console.error("Error during logout:", error)
+    }
   }
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-primary font-orbitron">Initializing Hunter Protocol...</p>
-        </div>
+        <div className="text-primary font-audiowide text-xl">Loading...</div>
       </div>
     )
   }
 
-  if (showIntro) {
-    return <IntroScreen onComplete={handleIntroComplete} />
+  if (showIntro && !introCompleted) {
+    return <IntroAnimation onComplete={handleIntroComplete} />
+  }
+
+  if (!player) {
+    return <IntroScreen onPlayerCreated={handlePlayerCreation} />
   }
 
   return (
     <ErrorBoundary>
       <NotificationProvider>
         <LevelUpProvider>
-          <GameLayout player={player} onPlayerUpdate={handlePlayerUpdate} />
+          <GameLayout player={player} setPlayer={setPlayer} onLogout={handleLogout} />
         </LevelUpProvider>
       </NotificationProvider>
     </ErrorBoundary>
