@@ -5,20 +5,17 @@ import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import {
   Home,
-  Calendar,
-  Plus,
-  User,
-  Palette,
-  Package,
+  Star,
+  CalendarCheck,
+  ListChecks,
+  UserCog,
+  LayoutGrid,
   Gift,
   Settings,
+  Activity,
   LogOut,
   Menu,
   X,
-  Clock,
-  CheckSquare,
-  AlertTriangle,
-  Target,
 } from "lucide-react"
 import type { Player } from "@/lib/player"
 
@@ -33,6 +30,7 @@ export function SideNavigation({ activePage, onNavigate, player, onLogout }: Sid
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [open, setOpen] = useState(true)
 
   useEffect(() => {
     const checkMobile = () => {
@@ -49,50 +47,26 @@ export function SideNavigation({ activePage, onNavigate, player, onLogout }: Sid
     return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
-  const navItems = [
-    { id: "profile", label: "Profile", icon: <User className="w-4 h-4 sm:w-5 sm:h-5" />, shortLabel: "Profile" },
-    { id: "quests", label: "Quests", icon: <Home className="w-4 h-4 sm:w-5 sm:h-5" />, shortLabel: "Quests" },
-    {
-      id: "daily-quests",
-      label: "Daily Missions",
-      icon: <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />,
-      shortLabel: "Daily",
-    },
-    {
-      id: "create-quest",
-      label: "Create Quest",
-      icon: <Plus className="w-4 h-4 sm:w-5 sm:h-5" />,
-      shortLabel: "Create",
-    },
-    {
-      id: "create-daily-missions",
-      label: "Create Daily Missions",
-      icon: <Target className="w-4 h-4 sm:w-5 sm:h-5" />,
-      shortLabel: "Daily+",
-    },
-    {
-      id: "schedule",
-      label: "Daily Schedule",
-      icon: <Clock className="w-4 h-4 sm:w-5 sm:h-5" />,
-      shortLabel: "Schedule",
-    },
-    { id: "todo", label: "To-Do List", icon: <CheckSquare className="w-4 h-4 sm:w-5 sm:h-5" />, shortLabel: "To-Do" },
-    {
-      id: "workout-accountability",
-      label: "Workout Accountability",
-      icon: <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />,
-      shortLabel: "Workout",
-    },
-    {
-      id: "customize-profile",
-      label: "Customize",
-      icon: <Palette className="w-4 h-4 sm:w-5 sm:h-5" />,
-      shortLabel: "Custom",
-    },
-    { id: "inventory", label: "Inventory", icon: <Package className="w-4 h-4 sm:w-5 sm:h-5" />, shortLabel: "Items" },
-    { id: "rewards", label: "Rewards", icon: <Gift className="w-4 h-4 sm:w-5 sm:h-5" />, shortLabel: "Rewards" },
-    { id: "settings", label: "Settings", icon: <Settings className="w-4 h-4 sm:w-5 sm:h-5" />, shortLabel: "Settings" },
-  ]
+  const NavButton = ({
+    page,
+    icon: Icon,
+    label,
+  }: {
+    page: string
+    icon: any
+    label: string
+  }) => (
+    <Button
+      variant="ghost"
+      className={`w-full justify-start rounded-none border-b border-primary/10 ${
+        activePage === page ? "bg-primary/10 text-primary" : "text-white/70 hover:text-white hover:bg-primary/5"
+      }`}
+      onClick={() => onNavigate(page)}
+    >
+      <Icon className="w-4 h-4 mr-2" />
+      {label}
+    </Button>
+  )
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed)
@@ -162,30 +136,16 @@ export function SideNavigation({ activePage, onNavigate, player, onLogout }: Sid
 
         <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent">
           <nav className="p-2 space-y-1">
-            {navItems.map((item) => (
-              <Button
-                key={item.id}
-                onClick={() => handleNavigate(item.id)}
-                variant="ghost"
-                className={`w-full justify-start py-2 px-3 rounded-none transition-colors text-sm ${
-                  activePage === item.id
-                    ? "bg-primary/20 text-primary border-l-2 border-primary"
-                    : "text-white/70 hover:text-white hover:bg-primary/10"
-                }`}
-              >
-                <span className="mr-2 sm:mr-3 flex-shrink-0">{item.icon}</span>
-                {(!isCollapsed || isMobile) && (
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="font-electrolize text-xs sm:text-sm truncate"
-                  >
-                    {isMobile && window.innerWidth < 400 ? item.shortLabel : item.label}
-                  </motion.span>
-                )}
-              </Button>
-            ))}
+            <NavButton page="profile" icon={Home} label="Profile" />
+            <NavButton page="quests" icon={Star} label="Quests" />
+            <NavButton page="daily-quests" icon={CalendarCheck} label="Daily Missions" />
+            <NavButton page="schedule" icon={CalendarCheck} label="Schedule" />
+            <NavButton page="todo" icon={ListChecks} label="To-Do" />
+            <NavButton page="customize-profile" icon={UserCog} label="Customize Profile" />
+            <NavButton page="inventory" icon={LayoutGrid} label="Inventory" />
+            <NavButton page="rewards" icon={Gift} label="Rewards" />
+            <NavButton page="activity" icon={Activity} label="Activity" />
+            <NavButton page="settings" icon={Settings} label="Settings" />
           </nav>
         </div>
 

@@ -74,6 +74,24 @@ export interface InventoryItem {
   equipped: boolean
 }
 
+export type ActivityType =
+  | "quest-completed"
+  | "quest-skipped"
+  | "daily-completed"
+  | "daily-skipped"
+  | "avatar-change"
+  | "title-change"
+
+export interface ActivityEvent {
+  id: string
+  date: string // ISO
+  type: ActivityType
+  refId?: string
+  title: string
+  xpChange: number // positive for earns, negative for penalties/costs
+  notes?: string
+}
+
 export interface Player {
   id: string
   name: string
@@ -83,9 +101,9 @@ export interface Player {
   stats: Stats
   quests: Quest[]
   dailyQuests: DailyQuest[]
-  schedule?: ScheduleItem[] // Make optional for backward compatibility
-  todoList?: TodoItem[] // Make optional for backward compatibility
-  workoutMisses?: WorkoutMiss[] // Make optional for backward compatibility
+  schedule?: ScheduleItem[]
+  todoList?: TodoItem[]
+  workoutMisses?: WorkoutMiss[]
   rewards: Reward[]
   inventory: InventoryItem[]
   title: string
@@ -96,8 +114,11 @@ export interface Player {
     theme: string
     notifications: boolean
     sound: boolean
-    workoutPenalty?: number // Make optional for backward compatibility
+    workoutPenalty?: number
   }
+  // New fields for proportional pricing and daily summary
+  lifetimeXp: number
+  activityLog: ActivityEvent[]
 }
 
 // Create a default player with initial values
@@ -267,6 +288,8 @@ export function createDefaultPlayer(name: string): Player {
       sound: true,
       workoutPenalty: 25,
     },
+    lifetimeXp: 0,
+    activityLog: [],
   }
 }
 
@@ -290,5 +313,7 @@ export function migratePlayerData(player: any): Player {
       ...quest,
       isCustom: quest.isCustom || false,
     })),
+    lifetimeXp: typeof player.lifetimeXp === "number" ? player.lifetimeXp : player.xp || 0,
+    activityLog: Array.isArray(player.activityLog) ? player.activityLog : [],
   }
 }

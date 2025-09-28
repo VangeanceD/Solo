@@ -8,180 +8,124 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useNotification } from "@/components/notification-provider"
 import type { Player } from "@/lib/player"
+import { computeAvatarCost } from "@/lib/xp"
 
 interface ProfileCustomizationPageProps {
   player: Player
   setPlayer: (player: Player) => void
 }
 
+type AvatarOption = { id: string; src: string; name: string; baseCost?: number }
+
 export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomizationPageProps) {
   const { addNotification } = useNotification()
   const [customTitle, setCustomTitle] = useState("")
 
-  const avatars = [
-    { id: "default", src: "/avatars/default.png", name: "Default", cost: 0 },
+  const avatars: AvatarOption[] = [
+    { id: "default", src: "/avatars/default.png", name: "Default", baseCost: 0 },
     {
       id: "naruto",
-      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-01%20115033-6lClIZcZoLhwCUM8mSy44f0xgJMDMA.png",
+      src: "/naruto-anime-avatar.jpg",
       name: "Naruto Uzumaki",
-      cost: 1000,
+      baseCost: 600,
     },
     {
       id: "luffy",
-      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-01%20115311-caMxeuENU2iyGhKc2vQtZRBbggnu9W.png",
+      src: "/luffy-anime-avatar.jpg",
       name: "Monkey D. Luffy",
-      cost: 1000,
+      baseCost: 600,
     },
     {
       id: "zoro",
-      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-01%20115145-X17b3RGK4k7UQ9iViYQLkJLUnY4pp5.png",
+      src: "/zoro-anime-avatar.jpg",
       name: "Roronoa Zoro",
-      cost: 1000,
+      baseCost: 700,
     },
     {
       id: "goku",
-      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-01%20115353-ugxWsBRw387pv3V7stugQ6B8aP9raP.png",
+      src: "/goku-anime-avatar.jpg",
       name: "Son Goku",
-      cost: 1500,
+      baseCost: 800,
     },
     {
       id: "aizen",
-      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-01%20123202-f206cSlWYcWXXs4GXMOWoNepjklx4s.png",
+      src: "/aizen-anime-avatar.jpg",
       name: "Sosuke Aizen",
-      cost: 2000,
+      baseCost: 1000,
     },
     {
       id: "madara",
-      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-01%20115452-ZTmvHWsgSEEjmvMoF7K56sYsz6HWTN.png",
+      src: "/madara-anime-avatar.jpg",
       name: "Madara Uchiha",
-      cost: 2000,
+      baseCost: 1000,
     },
     {
       id: "allmight",
-      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-01%20115631-D53jZVDDhvZtk3wjRlvf034Pv9Kiqv.png",
+      src: "/all-might-anime-avatar.jpg",
       name: "All Might",
-      cost: 1500,
+      baseCost: 800,
     },
     {
       id: "jotaro",
-      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-01%20115720-dxmeetj2yzJPkE7lPN4E4izfdeD19T.png",
+      src: "/jotaro-anime-avatar.jpg",
       name: "Jotaro Kujo",
-      cost: 2000,
+      baseCost: 900,
     },
     {
       id: "gojo",
-      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-01%20115818-ynZObcME925YPTfLNgx2rKS09fV8Er.png",
+      src: "/gojo-anime-avatar.jpg",
       name: "Satoru Gojo",
-      cost: 2500,
+      baseCost: 1200,
     },
     {
       id: "toji",
-      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-01%20115854-D1EowuCrRylR0Xt0uzJ7lveF8hRkaP.png",
+      src: "/toji-anime-avatar.jpg",
       name: "Toji Fushiguro",
-      cost: 3000,
+      baseCost: 1300,
     },
   ]
 
   const titles = [
-    // Beginner Titles
     { id: "novice", name: "Novice", cost: 0 },
-    { id: "rookie", name: "Rookie Warrior", cost: 500 },
-
-    // Naruto Inspired
-    { id: "genin", name: "Genin", cost: 1000 },
-    { id: "chunin", name: "Chunin", cost: 2000 },
-    { id: "jonin", name: "Jonin", cost: 3500 },
-    { id: "anbu", name: "ANBU Black Ops", cost: 5000 },
-    { id: "hokage", name: "Hokage", cost: 8000 },
-    { id: "sage", name: "Sage of Six Paths", cost: 12000 },
-
-    // One Piece Inspired
-    { id: "pirate", name: "Pirate", cost: 1500 },
-    { id: "supernova", name: "Supernova", cost: 4000 },
-    { id: "warlord", name: "Warlord of the Sea", cost: 7000 },
-    { id: "yonko", name: "Yonko", cost: 10000 },
-    { id: "pirateking", name: "Pirate King", cost: 15000 },
-
-    // Dragon Ball Inspired
-    { id: "earthling", name: "Earthling Warrior", cost: 1200 },
-    { id: "saiyan", name: "Saiyan Elite", cost: 3000 },
-    { id: "supersaiyan", name: "Super Saiyan", cost: 6000 },
-    { id: "godki", name: "God of Destruction", cost: 12000 },
-    { id: "ultrainstinct", name: "Ultra Instinct Master", cost: 18000 },
-
-    // Bleach Inspired
-    { id: "shinigami", name: "Shinigami", cost: 2500 },
-    { id: "lieutenant", name: "Lieutenant", cost: 4500 },
-    { id: "captain", name: "Captain", cost: 7500 },
-    { id: "espada", name: "Espada", cost: 9000 },
-    { id: "transcendent", name: "Transcendent Being", cost: 14000 },
-
-    // JoJo Inspired
-    { id: "standuser", name: "Stand User", cost: 2000 },
-    { id: "crusader", name: "Stardust Crusader", cost: 5500 },
-    { id: "gangstar", name: "Gang-Star", cost: 8500 },
-
-    // My Hero Academia Inspired
-    { id: "student", name: "U.A. Student", cost: 1800 },
-    { id: "hero", name: "Pro Hero", cost: 4200 },
-    { id: "tophero", name: "Top 10 Hero", cost: 8000 },
-    { id: "symbolofpeace", name: "Symbol of Peace", cost: 16000 },
-
-    // Attack on Titan Inspired
-    { id: "cadet", name: "Survey Corps Cadet", cost: 2200 },
-    { id: "soldier", name: "Survey Corps Soldier", cost: 4800 },
-    { id: "titanslayer", name: "Titan Slayer", cost: 9500 },
-    { id: "humanity", name: "Hope of Humanity", cost: 13000 },
-
-    // Jujutsu Kaisen Inspired
-    { id: "sorcerer", name: "Jujutsu Sorcerer", cost: 2800 },
-    { id: "grade1", name: "Grade 1 Sorcerer", cost: 6500 },
-    { id: "special", name: "Special Grade", cost: 11000 },
-    { id: "strongest", name: "The Strongest", cost: 17000 },
-
-    // Solo Leveling Inspired
-    { id: "erank", name: "E-Rank Hunter", cost: 800 },
-    { id: "drank", name: "D-Rank Hunter", cost: 1600 },
-    { id: "crank", name: "C-Rank Hunter", cost: 2400 },
-    { id: "brank", name: "B-Rank Hunter", cost: 3200 },
-    { id: "arank", name: "A-Rank Hunter", cost: 4800 },
-    { id: "srank", name: "S-Rank Hunter", cost: 7200 },
-    { id: "nationalrank", name: "National Level Hunter", cost: 10500 },
-    { id: "shadowmonarch", name: "Shadow Monarch", cost: 20000 },
-
-    // Demon Slayer Inspired
-    { id: "slayer", name: "Demon Slayer", cost: 3200 },
-    { id: "hashira", name: "Hashira", cost: 8800 },
-    { id: "breathmaster", name: "Breath Master", cost: 12500 },
-
-    // Overlord Inspired
-    { id: "adventurer", name: "Adventurer", cost: 1400 },
-    { id: "mithril", name: "Mithril Rank", cost: 3800 },
-    { id: "adamantite", name: "Adamantite Rank", cost: 7800 },
-    { id: "overlord", name: "Supreme Overlord", cost: 15500 },
-
-    // Ultimate Titles
-    { id: "legendary", name: "Legendary Warrior", cost: 22000 },
-    { id: "mythical", name: "Mythical Being", cost: 25000 },
-    { id: "omnipotent", name: "Omnipotent", cost: 30000 },
-    { id: "godslayer", name: "God Slayer", cost: 35000 },
-    { id: "absolute", name: "Absolute Existence", cost: 50000 },
+    { id: "rookie", name: "Rookie Warrior", cost: 400 },
+    { id: "genin", name: "Genin", cost: 800 },
+    { id: "chunin", name: "Chunin", cost: 1400 },
+    { id: "jonin", name: "Jonin", cost: 2200 },
+    { id: "anbu", name: "ANBU Black Ops", cost: 3500 },
+    { id: "hokage", name: "Hokage", cost: 6000 },
+    { id: "pirate", name: "Pirate", cost: 1000 },
+    { id: "yonko", name: "Yonko", cost: 7000 },
+    { id: "pirateking", name: "Pirate King", cost: 12000 },
+    { id: "supersaiyan", name: "Super Saiyan", cost: 8000 },
+    { id: "shadowmonarch", name: "Shadow Monarch", cost: 15000 },
   ]
 
-  const handleAvatarChange = (avatarSrc: string, cost: number, name: string) => {
+  const handleAvatarChange = (option: AvatarOption) => {
+    const cost = computeAvatarCost(player.lifetimeXp, option.baseCost)
     if (cost > 0 && player.xp < cost) {
-      addNotification(`Not enough XP. You need ${cost} XP to unlock ${name}.`, "error")
+      addNotification(`Not enough XP. You need ${cost} XP to unlock ${option.name}.`, "error")
       return
     }
 
-    const updatedPlayer = {
+    const updatedPlayer: Player = {
       ...player,
-      avatar: avatarSrc,
+      avatar: option.src,
       xp: cost > 0 ? player.xp - cost : player.xp,
+      activityLog: [
+        ...(player.activityLog || []),
+        {
+          id: cryptoRandomId(),
+          date: new Date().toISOString(),
+          type: "avatar-change",
+          title: `Changed avatar to ${option.name}`,
+          xpChange: -cost,
+          notes: "Proportional cost based on lifetime XP",
+        },
+      ],
     }
 
     setPlayer(updatedPlayer)
-    addNotification(`Avatar changed to ${name}!`, "success")
+    addNotification(`Avatar changed to ${option.name}! (-${cost} XP)`, "success")
   }
 
   const handleTitleChange = (title: string, cost: number) => {
@@ -190,10 +134,20 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
       return
     }
 
-    const updatedPlayer = {
+    const updatedPlayer: Player = {
       ...player,
       title,
       xp: cost > 0 ? player.xp - cost : player.xp,
+      activityLog: [
+        ...(player.activityLog || []),
+        {
+          id: cryptoRandomId(),
+          date: new Date().toISOString(),
+          type: "title-change",
+          title: `Changed title to ${title}`,
+          xpChange: -cost,
+        },
+      ],
     }
 
     setPlayer(updatedPlayer)
@@ -206,24 +160,35 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
       return
     }
 
-    const cost = 100000 // Most expensive option
+    // Proportional price for custom title: 3% of lifetime XP, min 2,500, max 25,000
+    const proportional = Math.round((player.lifetimeXp || 0) * 0.03)
+    const cost = Math.max(2500, Math.min(25000, proportional))
     if (player.xp < cost) {
       addNotification(`Not enough XP. You need ${cost} XP to create a custom title.`, "error")
       return
     }
 
-    const updatedPlayer = {
+    const updatedPlayer: Player = {
       ...player,
       title: customTitle.trim(),
       xp: player.xp - cost,
+      activityLog: [
+        ...(player.activityLog || []),
+        {
+          id: cryptoRandomId(),
+          date: new Date().toISOString(),
+          type: "title-change",
+          title: `Custom title: ${customTitle.trim()}`,
+          xpChange: -cost,
+        },
+      ],
     }
 
     setPlayer(updatedPlayer)
-    addNotification("Custom title created successfully!", "success")
+    addNotification(`Custom title created! (-${cost} XP)`, "success")
     setCustomTitle("")
   }
 
-  // Sort titles by cost for better organization
   const sortedTitles = [...titles].sort((a, b) => a.cost - b.cost)
 
   return (
@@ -233,6 +198,9 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
       <div className="bg-black/60 backdrop-blur-md border border-primary/30 p-4 animate-border-glow cyberpunk-border holographic-ui mb-4">
         <div className="holographic-header">Current XP</div>
         <div className="text-2xl font-bold text-primary font-orbitron">{player.xp.toLocaleString()} XP</div>
+        <div className="text-xs text-white/50 mt-1 font-electrolize">
+          Lifetime XP: <span className="text-primary/80">{(player.lifetimeXp || 0).toLocaleString()}</span>
+        </div>
       </div>
 
       <Tabs defaultValue="avatar" className="w-full">
@@ -253,32 +221,34 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
 
         <TabsContent value="avatar" className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {avatars.map((avatar) => (
-              <Card
-                key={avatar.id}
-                className={`bg-black/60 backdrop-blur-md border ${
-                  player.avatar === avatar.src
-                    ? "border-primary animate-border-glow"
-                    : "border-primary/30 hover:border-primary/60"
-                } transition-all duration-300 cursor-pointer quest-card`}
-                onClick={() => handleAvatarChange(avatar.src, avatar.cost, avatar.name)}
-              >
-                <CardContent className="p-4 flex flex-col items-center">
-                  <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-primary/50 mb-3 animate-pulse-glow">
-                    <img
-                      src={avatar.src || "/placeholder.svg?height=80&width=80"}
-                      alt={avatar.name}
-                      className="w-full h-full object-cover"
-                      style={{ objectPosition: "center" }}
-                    />
-                  </div>
-                  <div className="text-primary font-michroma text-xs text-center mb-1">{avatar.name}</div>
-                  <div className="text-white/70 font-orbitron text-xs">
-                    {avatar.cost > 0 ? `${avatar.cost.toLocaleString()} XP` : "Free"}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {avatars.map((option) => {
+              const cost = computeAvatarCost(player.lifetimeXp, option.baseCost)
+              const isCurrent = player.avatar === option.src
+              return (
+                <Card
+                  key={option.id}
+                  className={`bg-black/60 backdrop-blur-md border ${
+                    isCurrent ? "border-primary animate-border-glow" : "border-primary/30 hover:border-primary/60"
+                  } transition-all duration-300 cursor-pointer quest-card`}
+                  onClick={() => handleAvatarChange(option)}
+                >
+                  <CardContent className="p-4 flex flex-col items-center">
+                    <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-primary/50 mb-3 animate-pulse-glow">
+                      <img
+                        src={option.src || "/placeholder.svg?height=80&width=80&query=anime+avatar"}
+                        alt={option.name}
+                        className="w-full h-full object-cover"
+                        style={{ objectPosition: "center" }}
+                      />
+                    </div>
+                    <div className="text-primary font-michroma text-xs text-center mb-1">{option.name}</div>
+                    <div className={`text-xs font-orbitron ${player.xp < cost ? "text-red-400" : "text-white/70"}`}>
+                      {cost > 0 ? `${cost.toLocaleString()} XP` : "Free"}
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         </TabsContent>
 
@@ -290,9 +260,9 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
                 className={`bg-black/60 backdrop-blur-md border ${
                   player.title === title.name
                     ? "border-primary animate-border-glow"
-                    : title.cost > 10000
+                    : title.cost > 7000
                       ? "border-yellow-500/30 hover:border-yellow-500/60"
-                      : title.cost > 5000
+                      : title.cost > 3000
                         ? "border-purple-500/30 hover:border-purple-500/60"
                         : "border-primary/30 hover:border-primary/60"
                 } transition-all duration-300 cursor-pointer quest-card`}
@@ -302,7 +272,7 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
                   <div className="flex justify-between items-center">
                     <div
                       className={`font-michroma text-sm ${
-                        title.cost > 10000 ? "text-yellow-400" : title.cost > 5000 ? "text-purple-400" : "text-primary"
+                        title.cost > 7000 ? "text-yellow-400" : title.cost > 3000 ? "text-purple-400" : "text-primary"
                       }`}
                     >
                       {title.name}
@@ -317,9 +287,9 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
           </div>
 
           <div className="bg-black/60 backdrop-blur-md border border-yellow-500/50 p-6 animate-border-glow cyberpunk-border holographic-ui">
-            <div className="holographic-header text-yellow-400">Ultimate Custom Title (100,000 XP)</div>
+            <div className="holographic-header text-yellow-400">Pro Custom Title (proportional)</div>
             <p className="text-yellow-400/70 text-sm mb-4 font-electrolize">
-              Create your own legendary title - the most exclusive option available!
+              Price scales with your lifetime XP (3% of lifetime XP, min 2,500).
             </p>
             <div className="flex space-x-2">
               <div className="flex-1">
@@ -348,4 +318,9 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
       </Tabs>
     </div>
   )
+}
+
+function cryptoRandomId() {
+  // Safe enough for UI ids
+  return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)
 }

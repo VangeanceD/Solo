@@ -31,7 +31,7 @@ const audiowide = localFont({
 export const metadata: Metadata = {
   title: "ARISE: Hunter Protocol",
   description: "A real-life RPG system for self-improvement",
-    generator: 'v0.dev'
+    generator: 'v0.app'
 }
 
 export default function RootLayout({

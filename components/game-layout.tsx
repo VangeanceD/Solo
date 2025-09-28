@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { SideNavigation } from "@/components/side-navigation"
 import { BackgroundEffects } from "@/components/background-effects"
 import { QuestTimer } from "@/components/quest-timer"
@@ -20,7 +20,9 @@ import { RewardsPage } from "@/components/pages/rewards-page"
 import { SettingsPage } from "@/components/pages/settings-page"
 import { HeaderInfo } from "@/components/header-info"
 import { useNotification } from "@/components/notification-provider"
-import type { Player, Quest, DailyQuest } from "@/lib/player"
+import { ActivitySummaryPage } from "@/components/pages/activity-summary-page"
+import type { Player, Quest, DailyQuest, ActivityEvent } from "@/lib/player"
+import { computeSkipPenalty } from "@/lib/xp"
 
 interface GameLayoutProps {
   player: Player
@@ -45,22 +47,25 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
     setQuestTimerKey((prev) => prev + 1)
   }, [activePage])
 
+  const pushActivity = (evt: ActivityEvent) => {
+    setPlayer({
+      ...player,
+      activityLog: [...(player.activityLog || []), evt],
+    })
+  }
+
   const handleStartQuest = (quest: Quest | DailyQuest) => {
     try {
-      // Validate quest object
       if (!quest || !quest.id || !quest.title) {
         addNotification("Invalid quest data", "error")
         return
       }
-
-      // Check if there's already an active quest
       if (activeQuest) {
         addNotification("You already have an active quest. Complete it first!", "warning")
         return
       }
-
       setActiveQuest(quest)
-      setTimeRemaining(quest.timeLimit * 60) // Convert minutes to seconds
+      setTimeRemaining(quest.timeLimit * 60)
       addNotification(`Started: ${quest.title}`, "info")
     } catch (error) {
       console.error("Error starting quest:", error)
@@ -70,17 +75,30 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
 
   const handleCompleteQuest = () => {
     if (!activeQuest) return
-
     try {
-      // Store the completed quest before resetting active quest
       setCompletedQuest(activeQuest)
-
-      // Calculate stat increases if it's a regular quest
       if ("statIncreases" in activeQuest && activeQuest.statIncreases) {
         setStatIncreases(activeQuest.statIncreases)
       } else {
         setStatIncreases({})
       }
+
+      // Log completion (do not mutate XP here to avoid double-count if QuestTimer also awards)
+      const type = "penalty" in activeQuest ? "daily-completed" : "quest-completed"
+      pushActivity({
+        id: id(),
+        date: new Date().toISOString(),
+        type,
+        refId: activeQuest.id,
+        title: activeQuest.title,
+        xpChange: activeQuest.xp,
+      })
+
+      // Track lifetime XP increases optimistically without changing current XP balance
+      setPlayer({
+        ...player,
+        lifetimeXp: (player.lifetimeXp || 0) + activeQuest.xp,
+      })
 
       setShowQuestComplete(true)
       setActiveQuest(null)
@@ -93,23 +111,29 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
 
   const handleCancelQuest = () => {
     if (!activeQuest) return
-
     try {
-      if ("penalty" in activeQuest) {
-        // It's a daily quest with penalty
-        setPunishmentMessage(
-          `You failed to complete "${activeQuest.title}" in time. You lose ${activeQuest.penalty} XP.`,
-        )
-        setShowPunishment(true)
+      const penalty = computeSkipPenalty(activeQuest.xp)
+      const type = "penalty" in activeQuest ? "daily-skipped" : "quest-skipped"
 
-        // Apply penalty
-        setPlayer({
-          ...player,
-          xp: Math.max(0, player.xp - activeQuest.penalty),
-        })
-      } else {
-        addNotification(`Quest "${activeQuest.title}" was cancelled.`, "error")
-      }
+      setPunishmentMessage(`You skipped "${activeQuest.title}". Penalty: -${penalty} XP.`)
+      setShowPunishment(true)
+
+      // Apply penalty, log activity
+      setPlayer({
+        ...player,
+        xp: Math.max(0, player.xp - penalty),
+        activityLog: [
+          ...(player.activityLog || []),
+          {
+            id: id(),
+            date: new Date().toISOString(),
+            type,
+            refId: activeQuest.id,
+            title: activeQuest.title,
+            xpChange: -penalty,
+          },
+        ],
+      })
 
       setActiveQuest(null)
       setTimeRemaining(null)
@@ -128,76 +152,64 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
     setShowPunishment(false)
   }
 
-  const renderActivePage = () => {
-    try {
-      // Ensure player has all required properties
-      const safePlayer = {
-        ...player,
-        schedule: player.schedule || [],
-        todoList: player.todoList || [],
-        workoutMisses: player.workoutMisses || [],
-        settings: {
-          ...player.settings,
-          workoutPenalty: player.settings?.workoutPenalty || 25,
-        },
-      }
+  const safePlayer: Player = {
+    ...player,
+    schedule: player.schedule || [],
+    todoList: player.todoList || [],
+    workoutMisses: player.workoutMisses || [],
+    settings: {
+      ...player.settings,
+      workoutPenalty: player.settings?.workoutPenalty || 25,
+    },
+    activityLog: player.activityLog || [],
+    lifetimeXp: typeof player.lifetimeXp === "number" ? player.lifetimeXp : 0,
+  }
 
-      switch (activePage) {
-        case "profile":
-          return <ProfilePage player={safePlayer} />
-        case "quests":
-          return (
-            <QuestsPage
-              player={safePlayer}
-              activeQuest={activeQuest}
-              onStartQuest={handleStartQuest}
-              onCompleteQuest={handleCompleteQuest}
-              onCancelQuest={handleCancelQuest}
-            />
-          )
-        case "daily-quests":
-          return (
-            <DailyQuestsPage
-              player={safePlayer}
-              activeQuest={activeQuest}
-              onStartQuest={handleStartQuest}
-              setPlayer={setPlayer}
-            />
-          )
-        case "create-quest":
-          return <CreateQuestPage player={safePlayer} setPlayer={setPlayer} />
-        case "create-daily-missions":
-          return <CreateDailyMissionsPage player={safePlayer} setPlayer={setPlayer} />
-        case "schedule":
-          return <SchedulePage player={safePlayer} setPlayer={setPlayer} />
-        case "todo":
-          return <TodoPage player={safePlayer} setPlayer={setPlayer} />
-        case "workout-accountability":
-          return <WorkoutAccountabilityPage player={safePlayer} setPlayer={setPlayer} />
-        case "customize-profile":
-          return <ProfileCustomizationPage player={safePlayer} setPlayer={setPlayer} />
-        case "inventory":
-          return <InventoryPage player={safePlayer} />
-        case "rewards":
-          return <RewardsPage player={safePlayer} setPlayer={setPlayer} />
-        case "settings":
-          return <SettingsPage player={safePlayer} setPlayer={setPlayer} onLogout={onLogout} />
-        default:
-          return <ProfilePage player={safePlayer} />
-      }
-    } catch (error) {
-      console.error("Error rendering page:", error)
-      return (
-        <div className="text-center py-8">
-          <div className="text-red-500 font-michroma mb-4">Error loading page</div>
-          <button
-            onClick={() => setActivePage("profile")}
-            className="bg-primary/20 hover:bg-primary/30 text-primary px-4 py-2 border border-primary/30"
-          >
-            Return to Profile
-          </button>
-        </div>
-      )
+  const renderActivePage = () => {
+    switch (activePage) {
+      case "profile":
+        return <ProfilePage player={safePlayer} />
+      case "quests":
+        return (
+          <QuestsPage
+            player={safePlayer}
+            activeQuest={activeQuest}
+            onStartQuest={handleStartQuest}
+            onCompleteQuest={handleCompleteQuest}
+            onCancelQuest={handleCancelQuest}
+          />
+        )
+      case "daily-quests":
+        return (
+          <DailyQuestsPage
+            player={safePlayer}
+            activeQuest={activeQuest}
+            onStartQuest={handleStartQuest}
+            setPlayer={setPlayer}
+          />
+        )
+      case "create-quest":
+        return <CreateQuestPage player={safePlayer} setPlayer={setPlayer} />
+      case "create-daily-missions":
+        return <CreateDailyMissionsPage player={safePlayer} setPlayer={setPlayer} />
+      case "schedule":
+        return <SchedulePage player={safePlayer} setPlayer={setPlayer} />
+      case "todo":
+        return <TodoPage player={safePlayer} setPlayer={setPlayer} />
+      case "workout-accountability":
+        return <WorkoutAccountabilityPage player={safePlayer} setPlayer={setPlayer} />
+      case "customize-profile":
+        return <ProfileCustomizationPage player={safePlayer} setPlayer={setPlayer} />
+      case "inventory":
+        return <InventoryPage player={safePlayer} />
+      case "rewards":
+        return <RewardsPage player={safePlayer} setPlayer={setPlayer} />
+      case "settings":
+        return <SettingsPage player={safePlayer} setPlayer={setPlayer} onLogout={onLogout} />
+      case "activity":
+        return <ActivitySummaryPage player={safePlayer} />
+      default:
+        return <ProfilePage player={safePlayer} />
     }
   }
 
@@ -210,7 +222,6 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
 
         <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent">
           <div className="container mx-auto p-3 sm:p-4 pb-20 sm:pb-24 max-w-7xl">
-            {/* Add top padding on mobile to account for menu button */}
             <div className="pt-12 md:pt-0">
               <HeaderInfo player={player} />
 
@@ -249,4 +260,8 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
       />
     </div>
   )
+}
+
+function id() {
+  return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)
 }
