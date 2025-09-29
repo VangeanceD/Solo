@@ -1,0 +1,160 @@
+// components/game-layout.tsx
+import React, { useEffect, useState } from "react";
+import { Player, ActivityEvent } from "../types";
+import { Button } from "../components/Button";
+import { NavButton } from "../components/NavButton";
+import { Star, CalendarCheck } from "react-feather";
+import { id } from "../utils/id";
+import { addNotification } from "../utils/notifications";
+import { showLevelUp } from "../utils/levelUp";
+
+interface GameLayoutProps {
+  player: Player;
+  setPlayer: React.Dispatch<React.SetStateAction<Player>>;
+  onNavigate: (page: string) => void;
+  isMobileOpen: boolean;
+  setIsMobileOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const GameLayout: React.FC<GameLayoutProps> = ({
+  player,
+  setPlayer,
+  onNavigate,
+  isMobileOpen,
+  setIsMobileOpen,
+}) => {
+  const [activePage, setActivePage] = useState("");
+
+  useEffect(() => {
+    // Initialize from hash or localStorage
+    try {
+      if (typeof window !== "undefined") {
+        const hash = window.location.hash?.replace("#", "");
+        const stored = localStorage.getItem("activePage");
+        const initial = (hash || stored || "profile") as string;
+        setActivePage(initial);
+      }
+    } catch (e) {
+      console.error("Failed to init activePage:", e);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    // Keep hash and localStorage in sync with state
+    try {
+      if (typeof window !== "undefined") {
+        if (window.location.hash !== `#${activePage}`) {
+          window.location.hash = activePage;
+        }
+        localStorage.setItem("activePage", activePage);
+      }
+    } catch (e) {
+      console.error("Failed to persist activePage:", e);
+    }
+  }, [activePage]);
+
+  const pushActivity = (evt: ActivityEvent) => {
+    setPlayer((prev) => ({
+      ...prev,
+      activityLog: [...(prev.activityLog || []), evt],
+    }));
+  };
+
+  const handleCompleteQuest = () => {
+    const activeQuest = player.activeQuest;
+    if (!activeQuest) return;
+
+    setPlayer((prev) => ({
+      ...prev,
+      lifetimeXp: (prev.lifetimeXp || 0) + activeQuest.xp,
+    }));
+  };
+
+  const handleCancelQuest = () => {
+    const activeQuest = player.activeQuest;
+    if (!activeQuest) return;
+
+    const penalty = activeQuest.penalty || 0;
+    setPlayer((prev) => ({
+      ...prev,
+      xp: Math.max(0, prev.xp - penalty),
+      activityLog: [
+        ...(prev.activityLog || []),
+        {
+          id: id(),
+          date: new Date().toISOString(),
+          type: "questCancelled",
+          refId: activeQuest.id,
+          title: activeQuest.title,
+          xpChange: -penalty,
+        },
+      ],
+    }));
+  };
+
+  const handleNavigate = (pageId: string) => {
+    try {
+      if (typeof window !== "undefined") {
+        window.location.hash = pageId;
+        localStorage.setItem("activePage", pageId);
+      }
+      onNavigate(pageId);
+      if (isMobileOpen) {
+        setIsMobileOpen(false);
+      }
+    } catch (error) {
+      console.error("Navigation error:", error);
+    }
+  };
+
+  return (
+    <div>
+      <nav className="p-2 space-y-1">
+        <NavButton page="profile" icon={Star} label="Profile" />
+        <NavButton page="quests" icon={Star} label="Quests" />
+        <NavButton page="daily-missions" icon={CalendarCheck} label="Daily Missions" />
+        <NavButton page="create-quest" icon={Star} label="Create Quest" />
+        <NavButton page="create-daily-missions" icon={CalendarCheck} label="Create Daily Missions" />
+      </nav>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-primary font-audiowide glow-text">QUESTS</h1>
+        <div className="flex items-center gap-2">
+          <div className="text-white/70 font-electrolize hidden sm:block">
+            {player.completedQuests} / {player.totalQuests} Completed
+          </div>
+          <Button
+            onClick={() => {
+              try {
+                window.location.hash = "create-quest";
+              } catch {}
+            }}
+            className="bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary"
+          >
+            CREATE QUEST
+          </Button>
+        </div>
+      </div>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-primary font-audiowide glow-text">DAILY MISSIONS</h1>
+        <div className="flex items-center gap-2">
+          <div className="text-white/70 font-electrolize hidden sm:block">
+            {player.dailyQuests.filter((q) => q.completed).length} / {player.dailyQuests.length} Completed
+          </div>
+          <Button
+            onClick={() => {
+              try {
+                window.location.hash = "create-daily-missions";
+              } catch {}
+            }}
+            className="bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary"
+          >
+            CREATE MISSION
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default GameLayout;
