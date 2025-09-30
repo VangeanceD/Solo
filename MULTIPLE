@@ -26,28 +26,32 @@ const GameLayout: React.FC<GameLayoutProps> = ({
   const [activePage, setActivePage] = useState("");
 
   useEffect(() => {
-    // Initialize from hash or localStorage
     try {
-      if (typeof window !== "undefined") {
-        const hash = window.location.hash?.replace("#", "");
-        const stored = localStorage.getItem("activePage");
-        const initial = (hash || stored || "profile") as string;
-        setActivePage(initial);
-      }
+      const initial =
+        (typeof window !== "undefined" && window.location.hash?.slice(1)) ||
+        (typeof window !== "undefined" && localStorage.getItem("activePage")) ||
+        "profile";
+      setActivePage(initial);
+
+      const onHashChange = () => {
+        const p = window.location.hash.slice(1) || "profile";
+        setActivePage(p);
+      };
+      window.addEventListener("hashchange", onHashChange);
+      return () => window.removeEventListener("hashchange", onHashChange);
     } catch (e) {
-      console.error("Failed to init activePage:", e);
+      console.error("Failed to init/sync activePage:", e);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    // Keep hash and localStorage in sync with state
+    if (!activePage) return;
     try {
       if (typeof window !== "undefined") {
-        if (window.location.hash !== `#${activePage}`) {
+        localStorage.setItem("activePage", activePage);
+        if (window.location.hash.slice(1) !== activePage) {
           window.location.hash = activePage;
         }
-        localStorage.setItem("activePage", activePage);
       }
     } catch (e) {
       console.error("Failed to persist activePage:", e);
@@ -65,41 +69,82 @@ const GameLayout: React.FC<GameLayoutProps> = ({
     const activeQuest = player.activeQuest;
     if (!activeQuest) return;
 
-    setPlayer((prev) => ({
-      ...prev,
-      lifetimeXp: (prev.lifetimeXp || 0) + activeQuest.xp,
-    }));
+    try {
+      const finished = activeQuest;
+
+      // Log completion (xpChange recorded here; actual XP was awarded in QuestTimer)
+      const type = "penalty" in finished ? "daily-completed" : "quest-completed";
+      pushActivity({
+        id: id(),
+        date: new Date().toISOString(),
+        type,
+        refId: finished.id,
+        title: finished.title,
+        xpChange: finished.xp,
+      });
+
+      // Track lifetime XP without touching current XP (QuestTimer already updated current XP)
+      setPlayer((prev) => ({
+        ...prev,
+        lifetimeXp: (prev.lifetimeXp || 0) + finished.xp,
+      }));
+
+      // Additional logic for completed quest handling
+      // setCompletedQuest(finished);
+      // if ("statIncreases" in finished && finished.statIncreases) {
+      //   setStatIncreases(finished.statIncreases);
+      // } else {
+      //   setStatIncreases({});
+      // }
+
+      // setShowQuestComplete(true);
+      setActiveQuest(null);
+      // setTimeRemaining(null);
+    } catch (error) {
+      console.error("Error completing quest:", error);
+      addNotification("Error completing quest", "error");
+    }
   };
 
   const handleCancelQuest = () => {
     const activeQuest = player.activeQuest;
     if (!activeQuest) return;
 
-    const penalty = activeQuest.penalty || 0;
-    setPlayer((prev) => ({
-      ...prev,
-      xp: Math.max(0, prev.xp - penalty),
-      activityLog: [
-        ...(prev.activityLog || []),
-        {
-          id: id(),
-          date: new Date().toISOString(),
-          type: "questCancelled",
-          refId: activeQuest.id,
-          title: activeQuest.title,
-          xpChange: -penalty,
-        },
-      ],
-    }));
+    try {
+      const penalty = activeQuest.penalty || 0;
+      const type = "penalty" in activeQuest ? "daily-skipped" : "quest-skipped";
+
+      setPlayer((prev) => ({
+        ...prev,
+        xp: Math.max(0, prev.xp - penalty),
+        activityLog: [
+          ...(prev.activityLog || []),
+          {
+            id: id(),
+            date: new Date().toISOString(),
+            type,
+            refId: activeQuest.id,
+            title: activeQuest.title,
+            xpChange: -penalty,
+          },
+        ],
+      }));
+
+      setActiveQuest(null);
+      // setTimeRemaining(null);
+    } catch (error) {
+      console.error("Error cancelling quest:", error);
+      addNotification("Error cancelling quest", "error");
+    }
   };
 
   const handleNavigate = (pageId: string) => {
     try {
+      onNavigate(pageId);
       if (typeof window !== "undefined") {
         window.location.hash = pageId;
         localStorage.setItem("activePage", pageId);
       }
-      onNavigate(pageId);
       if (isMobileOpen) {
         setIsMobileOpen(false);
       }
@@ -111,11 +156,26 @@ const GameLayout: React.FC<GameLayoutProps> = ({
   return (
     <div>
       <nav className="p-2 space-y-1">
-        <NavButton page="profile" icon={Star} label="Profile" />
-        <NavButton page="quests" icon={Star} label="Quests" />
-        <NavButton page="daily-missions" icon={CalendarCheck} label="Daily Missions" />
-        <NavButton page="create-quest" icon={Star} label="Create Quest" />
-        <NavButton page="create-daily-missions" icon={CalendarCheck} label="Create Daily Missions" />
+        <NavButton page="profile" icon={Star} label="Profile" onClick={() => handleNavigate("profile")} />
+        <NavButton page="quests" icon={Star} label="Quests" onClick={() => handleNavigate("quests")} />
+        <NavButton
+          page="daily-missions"
+          icon={CalendarCheck}
+          label="Daily Missions"
+          onClick={() => handleNavigate("daily-missions")}
+        />
+        <NavButton
+          page="create-quest"
+          icon={Star}
+          label="Create Quest"
+          onClick={() => handleNavigate("create-quest")}
+        />
+        <NavButton
+          page="create-daily-missions"
+          icon={CalendarCheck}
+          label="Create Daily Missions"
+          onClick={() => handleNavigate("create-daily-missions")}
+        />
       </nav>
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-primary font-audiowide glow-text">QUESTS</h1>
@@ -124,11 +184,7 @@ const GameLayout: React.FC<GameLayoutProps> = ({
             {player.completedQuests} / {player.totalQuests} Completed
           </div>
           <Button
-            onClick={() => {
-              try {
-                window.location.hash = "create-quest";
-              } catch {}
-            }}
+            onClick={() => handleNavigate("create-quest")}
             className="bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary"
           >
             CREATE QUEST
@@ -142,11 +198,7 @@ const GameLayout: React.FC<GameLayoutProps> = ({
             {player.dailyQuests.filter((q) => q.completed).length} / {player.dailyQuests.length} Completed
           </div>
           <Button
-            onClick={() => {
-              try {
-                window.location.hash = "create-daily-missions";
-              } catch {}
-            }}
+            onClick={() => handleNavigate("create-daily-missions")}
             className="bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary"
           >
             CREATE MISSION
