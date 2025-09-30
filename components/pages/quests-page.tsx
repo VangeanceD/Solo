@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Clock, Star, CheckCircle, Play } from "lucide-react"
+import { Clock, Star, CheckCircle, Play, Plus } from "lucide-react"
 import { useNotification } from "@/components/notification-provider"
 import type { Player, Quest } from "@/lib/player"
 
@@ -47,11 +47,24 @@ export function QuestsPage({ player, activeQuest, onStartQuest, onCompleteQuest,
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-primary font-audiowide glow-text">QUESTS</h1>
-        <div className="text-white/70 font-electrolize">
-          {completedQuests} / {totalQuests} Completed
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-primary font-audiowide glow-text">QUESTS</h1>
+          <div className="text-white/70 font-electrolize text-sm mt-1">
+            {completedQuests} / {totalQuests} Completed
+          </div>
         </div>
+        <Button
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              window.location.hash = "create-quest"
+            }
+          }}
+          className="bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary whitespace-nowrap"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          CREATE QUEST
+        </Button>
       </div>
 
       {quests.length === 0 ? (
@@ -61,12 +74,6 @@ export function QuestsPage({ player, activeQuest, onStartQuest, onCompleteQuest,
           </div>
           <h3 className="text-xl font-semibold text-primary mb-2 font-michroma">No Quests Available</h3>
           <p className="text-white/50 font-electrolize mb-4">Create your first quest to begin your journey!</p>
-          <Button
-            onClick={() => (window.location.hash = "create-quest")}
-            className="bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary"
-          >
-            CREATE QUEST
-          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

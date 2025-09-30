@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Clock, Star } from "lucide-react"
+import { Clock, Star, Plus } from "lucide-react"
 import type { Player } from "@/lib/player"
 import { computeSkipPenalty } from "@/lib/xp"
 
@@ -16,11 +16,24 @@ interface DailyQuestsPageProps {
 export function DailyQuestsPage({ player, activeQuest, onStartQuest }: DailyQuestsPageProps) {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-primary font-audiowide glow-text">DAILY MISSIONS</h1>
-        <div className="text-white/70 font-electrolize">
-          {player.dailyQuests.filter((q) => q.completed).length} / {player.dailyQuests.length} Completed
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-primary font-audiowide glow-text">DAILY MISSIONS</h1>
+          <div className="text-white/70 font-electrolize text-sm mt-1">
+            {player.dailyQuests.filter((q) => q.completed).length} / {player.dailyQuests.length} Completed
+          </div>
         </div>
+        <Button
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              window.location.hash = "create-daily-missions"
+            }
+          }}
+          className="bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary whitespace-nowrap"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          CREATE MISSION
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

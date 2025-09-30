@@ -66,57 +66,73 @@ export function QuestTimer({
     }
 
     try {
-      const oldLevel = player.level
-      const oldXP = player.xp
+      // Use functional setState to avoid stale state
+      setPlayer((prevPlayer) => {
+        const oldLevel = prevPlayer.level
+        const oldXP = prevPlayer.xp
 
-      // Calculate new XP
-      const newXP = oldXP + quest.xp
+        // Calculate new XP
+        const newXP = oldXP + quest.xp
 
-      // Calculate new level (simple formula: level = floor(xp / 100) + 1)
-      const newLevel = Math.floor(newXP / 100) + 1
+        // Calculate new level (level = floor(xp / 100) + 1)
+        const newLevel = Math.floor(newXP / 100) + 1
 
-      // Update quest as completed
-      let updatedQuests = player.quests
-      if ("statIncreases" in quest) {
-        updatedQuests = player.quests.map((q) => (q.id === quest.id ? { ...q, completed: true } : q))
-      }
+        // Update quests
+        let updatedQuests = prevPlayer.quests
+        if ("statIncreases" in quest) {
+          updatedQuests = prevPlayer.quests.map((q) => (q.id === quest.id ? { ...q, completed: true } : q))
+        }
 
-      // Update daily quests if it's a daily quest
-      let updatedDailyQuests = player.dailyQuests
-      if ("penalty" in quest) {
-        updatedDailyQuests = player.dailyQuests.map((q) => (q.id === quest.id ? { ...q, completed: true } : q))
-      }
+        // Update daily quests
+        let updatedDailyQuests = prevPlayer.dailyQuests
+        if ("penalty" in quest) {
+          updatedDailyQuests = prevPlayer.dailyQuests.map((q) => (q.id === quest.id ? { ...q, completed: true } : q))
+        }
 
-      // Create updated player
-      const updatedPlayer = {
-        ...player,
-        quests: updatedQuests,
-        dailyQuests: updatedDailyQuests,
-        xp: newXP,
-        level: newLevel,
-        xpToNextLevel: newLevel * 100, // Next level threshold
-      }
-
-      // Add stat increases if it's a regular quest
-      if ("statIncreases" in quest && quest.statIncreases) {
-        const newStats = { ...player.stats }
+        // Apply stat increases
+        const newStats = { ...prevPlayer.stats }
         const statIncreases: Record<string, number> = {}
 
-        Object.entries(quest.statIncreases).forEach(([stat, increase]) => {
-          if (stat in newStats && increase) {
-            newStats[stat as keyof typeof newStats] += increase
-            statIncreases[stat] = increase
-          }
-        })
-        updatedPlayer.stats = newStats
+        if ("statIncreases" in quest && quest.statIncreases) {
+          Object.entries(quest.statIncreases).forEach(([stat, increase]) => {
+            if (stat in newStats && increase) {
+              newStats[stat as keyof typeof newStats] += increase
+              statIncreases[stat] = increase
+            }
+          })
+        }
 
-        // Show level up if player leveled up
-        if (newLevel > oldLevel) {
+        // Create updated player
+        const updatedPlayer = {
+          ...prevPlayer,
+          quests: updatedQuests,
+          dailyQuests: updatedDailyQuests,
+          xp: newXP,
+          level: newLevel,
+          xpToNextLevel: newLevel * 100,
+          stats: newStats,
+          lifetimeXp: (prevPlayer.lifetimeXp || 0) + quest.xp,
+          activityLog: [
+            ...(prevPlayer.activityLog || []),
+            {
+              id: Math.random().toString(36).slice(2),
+              date: new Date().toISOString(),
+              type: ("penalty" in quest ? "daily-completed" : "quest-completed") as any,
+              refId: quest.id,
+              title: quest.title,
+              xpChange: quest.xp,
+            },
+          ],
+        }
+
+        // Show level up if leveled up
+        if (newLevel > oldLevel && "statIncreases" in quest) {
           showLevelUp(newLevel, statIncreases)
         }
-      }
 
-      setPlayer(updatedPlayer)
+        return updatedPlayer
+      })
+
       addNotification(`Quest completed! +${quest.xp} XP`, "success")
     } catch (error) {
       console.error("Error completing quest:", error)

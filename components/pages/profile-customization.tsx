@@ -107,25 +107,27 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
       return
     }
 
-    const updatedPlayer: Player = {
-      ...player,
-      avatar: option.src,
-      xp: cost > 0 ? player.xp - cost : player.xp,
-      activityLog: [
-        ...(player.activityLog || []),
-        {
-          id: cryptoRandomId(),
-          date: new Date().toISOString(),
-          type: "avatar-change",
-          title: `Changed avatar to ${option.name}`,
-          xpChange: -cost,
-          notes: "Proportional cost based on lifetime XP",
-        },
-      ],
-    }
+    setPlayer((prevPlayer) => {
+      const updatedPlayer: Player = {
+        ...prevPlayer,
+        avatar: option.src,
+        xp: cost > 0 ? prevPlayer.xp - cost : prevPlayer.xp,
+        activityLog: [
+          ...(prevPlayer.activityLog || []),
+          {
+            id: Math.random().toString(36).slice(2),
+            date: new Date().toISOString(),
+            type: "avatar-change" as any,
+            title: `Changed avatar to ${option.name}`,
+            xpChange: -cost,
+            notes: "Proportional cost based on lifetime XP",
+          },
+        ],
+      }
+      return updatedPlayer
+    })
 
-    setPlayer(updatedPlayer)
-    addNotification(`Avatar changed to ${option.name}! (-${cost} XP)`, "success")
+    addNotification(`Avatar changed to ${option.name}! ${cost > 0 ? `(-${cost} XP)` : ""}`, "success")
   }
 
   const handleTitleChange = (title: string, cost: number) => {

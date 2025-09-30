@@ -118,22 +118,22 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
       setPunishmentMessage(`You skipped "${activeQuest.title}". Penalty: -${penalty} XP.`)
       setShowPunishment(true)
 
-      // Apply penalty, log activity
-      setPlayer({
-        ...player,
-        xp: Math.max(0, player.xp - penalty),
+      // Use functional setState to avoid stale state
+      setPlayer((prevPlayer) => ({
+        ...prevPlayer,
+        xp: Math.max(0, prevPlayer.xp - penalty),
         activityLog: [
-          ...(player.activityLog || []),
+          ...(prevPlayer.activityLog || []),
           {
-            id: id(),
+            id: Math.random().toString(36).slice(2),
             date: new Date().toISOString(),
-            type,
+            type: type as any,
             refId: activeQuest.id,
             title: activeQuest.title,
             xpChange: -penalty,
           },
         ],
-      })
+      }))
 
       setActiveQuest(null)
       setTimeRemaining(null)
