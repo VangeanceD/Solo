@@ -2,14 +2,13 @@
 
 import { useEffect, useState } from "react"
 import { SideNavigation } from "@/components/side-navigation"
+import { BottomNavigation } from "@/components/bottom-navigation"
 import { BackgroundEffects } from "@/components/background-effects"
 import { QuestTimer } from "@/components/quest-timer"
 import { QuestCompleteOverlay } from "@/components/quest-complete-overlay"
 import { PunishmentModal } from "@/components/punishment-modal"
 import { QuestsPage } from "@/components/pages/quests-page"
 import { DailyQuestsPage } from "@/components/pages/daily-quests-page"
-import { CreateQuestPage } from "@/components/pages/create-quest-page"
-import { CreateDailyMissionsPage } from "@/components/pages/create-daily-missions-page"
 import { SchedulePage } from "@/components/pages/schedule-page"
 import { TodoPage } from "@/components/pages/todo-page"
 import { WorkoutAccountabilityPage } from "@/components/pages/workout-accountability-page"
@@ -33,6 +32,7 @@ interface GameLayoutProps {
 
 export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
   const [activePage, setActivePage] = useState("profile")
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [questTimerKey, setQuestTimerKey] = useState(0)
   const [activeQuest, setActiveQuest] = useState<Quest | DailyQuest | null>(null)
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
@@ -43,6 +43,15 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
   const [punishmentMessage, setPunishmentMessage] = useState("")
   const { addNotification } = useNotification()
   const { showLevelUp } = useLevelUp()
+
+  // Listen for player updates from modals
+  useEffect(() => {
+    const handlePlayerUpdate = (event: CustomEvent) => {
+      setPlayer(event.detail)
+    }
+    window.addEventListener("playerUpdate" as any, handlePlayerUpdate)
+    return () => window.removeEventListener("playerUpdate" as any, handlePlayerUpdate)
+  }, [setPlayer])
 
   // Reset quest timer when changing pages
   useEffect(() => {
@@ -72,23 +81,13 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
     if (!activeQuest) return
 
     try {
-      // Use functional setState to ensure we work with the latest state
       setPlayer((prevPlayer) => {
         const oldLevel = prevPlayer.level
         const oldXP = prevPlayer.xp
 
-        // Calculate new XP
         const newXP = oldXP + activeQuest.xp
-        console.log("Completing quest:", {
-          oldXP,
-          questXP: activeQuest.xp,
-          newXP,
-        })
-
-        // Calculate new level
         const newLevel = Math.floor(newXP / 100) + 1
 
-        // Update quests/daily quests
         let updatedQuests = prevPlayer.quests
         if ("statIncreases" in activeQuest) {
           updatedQuests = prevPlayer.quests.map((q) => (q.id === activeQuest.id ? { ...q, completed: true } : q))
@@ -101,7 +100,6 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
           )
         }
 
-        // Apply stat increases
         const newStats = { ...prevPlayer.stats }
         const statIncreases: Record<string, number> = {}
 
@@ -114,12 +112,10 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
           })
         }
 
-        // Show level up notification
         if (newLevel > oldLevel && Object.keys(statIncreases).length > 0) {
           setTimeout(() => showLevelUp(newLevel, statIncreases), 500)
         }
 
-        // Create activity log entry
         const activityEntry = {
           id: Math.random().toString(36).slice(2),
           date: new Date().toISOString(),
@@ -129,7 +125,6 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
           xpChange: activeQuest.xp,
         }
 
-        // Return updated player
         return {
           ...prevPlayer,
           quests: updatedQuests,
@@ -143,7 +138,6 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
         }
       })
 
-      // Set UI state
       setCompletedQuest(activeQuest)
       if ("statIncreases" in activeQuest && activeQuest.statIncreases) {
         setStatIncreases(activeQuest.statIncreases)
@@ -154,7 +148,6 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
       setShowQuestComplete(true)
       addNotification(`Quest completed! +${activeQuest.xp} XP`, "success")
 
-      // Clear active quest
       setActiveQuest(null)
       setTimeRemaining(null)
     } catch (error) {
@@ -172,30 +165,21 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
       setPunishmentMessage(`You skipped "${activeQuest.title}". Penalty: -${penalty} XP.`)
       setShowPunishment(true)
 
-      // Use functional setState
-      setPlayer((prevPlayer) => {
-        console.log("Cancelling quest:", {
-          oldXP: prevPlayer.xp,
-          penalty,
-          newXP: Math.max(0, prevPlayer.xp - penalty),
-        })
-
-        return {
-          ...prevPlayer,
-          xp: Math.max(0, prevPlayer.xp - penalty),
-          activityLog: [
-            ...(prevPlayer.activityLog || []),
-            {
-              id: Math.random().toString(36).slice(2),
-              date: new Date().toISOString(),
-              type: type as any,
-              refId: activeQuest.id,
-              title: activeQuest.title,
-              xpChange: -penalty,
-            },
-          ],
-        }
-      })
+      setPlayer((prevPlayer) => ({
+        ...prevPlayer,
+        xp: Math.max(0, prevPlayer.xp - penalty),
+        activityLog: [
+          ...(prevPlayer.activityLog || []),
+          {
+            id: Math.random().toString(36).slice(2),
+            date: new Date().toISOString(),
+            type: type as any,
+            refId: activeQuest.id,
+            title: activeQuest.title,
+            xpChange: -penalty,
+          },
+        ],
+      }))
 
       addNotification(`Penalty applied: -${penalty} XP`, "error")
       setActiveQuest(null)
@@ -213,6 +197,15 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
 
   const handlePunishmentClose = () => {
     setShowPunishment(false)
+  }
+
+  const handleNavigate = (page: string) => {
+    setActivePage(page)
+    setIsMobileMenuOpen(false)
+    if (typeof window !== "undefined") {
+      window.location.hash = page
+      localStorage.setItem("activePage", page)
+    }
   }
 
   const safePlayer: Player = {
@@ -251,10 +244,6 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
             setPlayer={setPlayer}
           />
         )
-      case "create-quest":
-        return <CreateQuestPage player={safePlayer} setPlayer={setPlayer} />
-      case "create-daily-missions":
-        return <CreateDailyMissionsPage player={safePlayer} setPlayer={setPlayer} />
       case "schedule":
         return <SchedulePage player={safePlayer} setPlayer={setPlayer} />
       case "todo":
@@ -281,10 +270,10 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
       <BackgroundEffects />
 
       <div className="relative z-10 flex h-screen">
-        <SideNavigation activePage={activePage} onNavigate={setActivePage} player={player} onLogout={onLogout} />
+        <SideNavigation activePage={activePage} onNavigate={handleNavigate} player={player} onLogout={onLogout} />
 
-        <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent">
-          <div className="container mx-auto p-3 sm:p-4 pb-20 sm:pb-24 max-w-7xl">
+        <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent pb-20 md:pb-4">
+          <div className="container mx-auto p-3 sm:p-4 max-w-7xl">
             <div className="pt-12 md:pt-0">
               <HeaderInfo player={player} />
 
@@ -306,6 +295,18 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
           </div>
         </main>
       </div>
+
+      {/* Bottom Navigation for Mobile */}
+      <BottomNavigation
+        activePage={activePage}
+        onNavigate={handleNavigate}
+        onMenuOpen={() => setIsMobileMenuOpen(true)}
+      />
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 bg-black/70 z-20" onClick={() => setIsMobileMenuOpen(false)}></div>
+      )}
 
       <QuestCompleteOverlay
         show={showQuestComplete}

@@ -16,7 +16,6 @@ import {
   LogOut,
   Menu,
   X,
-  Plus,
 } from "lucide-react"
 import type { Player } from "@/lib/player"
 
@@ -140,8 +139,6 @@ export function SideNavigation({ activePage, onNavigate, player, onLogout }: Sid
             <NavButton page="profile" icon={Home} label="Profile" />
             <NavButton page="quests" icon={Star} label="Quests" />
             <NavButton page="daily-quests" icon={CalendarCheck} label="Daily Missions" />
-            <NavButton page="create-quest" icon={Plus} label="Create Quest" />
-            <NavButton page="create-daily-missions" icon={Plus} label="Create Daily Missions" />
             <NavButton page="schedule" icon={CalendarCheck} label="Schedule" />
             <NavButton page="todo" icon={ListChecks} label="To-Do" />
             <NavButton page="customize-profile" icon={UserCog} label="Customize Profile" />
