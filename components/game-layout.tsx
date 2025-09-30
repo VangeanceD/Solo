@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import { SideNavigation } from "@/components/side-navigation"
 import { BottomNavigation } from "@/components/bottom-navigation"
+import { MobileHeader } from "@/components/mobile-header"
+import { MobileMenu } from "@/components/mobile-menu"
 import { BackgroundEffects } from "@/components/background-effects"
 import { QuestTimer } from "@/components/quest-timer"
 import { QuestCompleteOverlay } from "@/components/quest-complete-overlay"
@@ -21,6 +23,7 @@ import { HeaderInfo } from "@/components/header-info"
 import { useNotification } from "@/components/notification-provider"
 import { useLevelUp } from "@/components/level-up-provider"
 import { ActivitySummaryPage } from "@/components/pages/activity-summary-page"
+import { useIsMobile } from "@/hooks/use-mobile"
 import type { Player, Quest, DailyQuest } from "@/lib/player"
 import { computeSkipPenalty } from "@/lib/xp"
 
@@ -31,6 +34,7 @@ interface GameLayoutProps {
 }
 
 export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
+  const isMobile = useIsMobile()
   const [activePage, setActivePage] = useState("profile")
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [questTimerKey, setQuestTimerKey] = useState(0)
@@ -57,6 +61,13 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
   useEffect(() => {
     setQuestTimerKey((prev) => prev + 1)
   }, [activePage])
+
+  // Close mobile menu when switching to desktop
+  useEffect(() => {
+    if (!isMobile) {
+      setIsMobileMenuOpen(false)
+    }
+  }, [isMobile])
 
   const handleStartQuest = (quest: Quest | DailyQuest) => {
     try {
@@ -201,7 +212,6 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
 
   const handleNavigate = (page: string) => {
     setActivePage(page)
-    setIsMobileMenuOpen(false)
     if (typeof window !== "undefined") {
       window.location.hash = page
       localStorage.setItem("activePage", page)
@@ -269,12 +279,52 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
     <div className="relative min-h-screen bg-black text-white overflow-hidden">
       <BackgroundEffects />
 
-      <div className="relative z-10 flex h-screen">
-        <SideNavigation activePage={activePage} onNavigate={handleNavigate} player={player} onLogout={onLogout} />
+      {/* Mobile Layout */}
+      {isMobile ? (
+        <>
+          <MobileHeader
+            player={player}
+            onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            isMenuOpen={isMobileMenuOpen}
+          />
 
-        <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent pb-20 md:pb-4">
-          <div className="container mx-auto p-3 sm:p-4 max-w-7xl">
-            <div className="pt-12 md:pt-0">
+          <MobileMenu
+            isOpen={isMobileMenuOpen}
+            activePage={activePage}
+            onNavigate={handleNavigate}
+            onClose={() => setIsMobileMenuOpen(false)}
+            player={player}
+            onLogout={onLogout}
+          />
+
+          <main className="relative z-10 pt-16 pb-24">
+            <div className="p-4">
+              {activeQuest && (
+                <QuestTimer
+                  key={questTimerKey}
+                  quest={activeQuest}
+                  timeRemaining={timeRemaining}
+                  setTimeRemaining={setTimeRemaining}
+                  onComplete={handleCompleteQuest}
+                  onFailure={handleCancelQuest}
+                  player={player}
+                  setPlayer={setPlayer}
+                />
+              )}
+
+              {renderActivePage()}
+            </div>
+          </main>
+
+          <BottomNavigation activePage={activePage} onNavigate={handleNavigate} />
+        </>
+      ) : (
+        // Desktop Layout
+        <div className="relative z-10 flex h-screen">
+          <SideNavigation activePage={activePage} onNavigate={handleNavigate} player={player} onLogout={onLogout} />
+
+          <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent">
+            <div className="container mx-auto p-4 max-w-7xl">
               <HeaderInfo player={player} />
 
               {activeQuest && (
@@ -292,20 +342,8 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
 
               {renderActivePage()}
             </div>
-          </div>
-        </main>
-      </div>
-
-      {/* Bottom Navigation for Mobile */}
-      <BottomNavigation
-        activePage={activePage}
-        onNavigate={handleNavigate}
-        onMenuOpen={() => setIsMobileMenuOpen(true)}
-      />
-
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 bg-black/70 z-20" onClick={() => setIsMobileMenuOpen(false)}></div>
+          </main>
+        </div>
       )}
 
       <QuestCompleteOverlay
