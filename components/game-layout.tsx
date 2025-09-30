@@ -20,8 +20,9 @@ import { RewardsPage } from "@/components/pages/rewards-page"
 import { SettingsPage } from "@/components/pages/settings-page"
 import { HeaderInfo } from "@/components/header-info"
 import { useNotification } from "@/components/notification-provider"
+import { useLevelUp } from "@/components/level-up-provider"
 import { ActivitySummaryPage } from "@/components/pages/activity-summary-page"
-import type { Player, Quest, DailyQuest, ActivityEvent } from "@/lib/player"
+import type { Player, Quest, DailyQuest } from "@/lib/player"
 import { computeSkipPenalty } from "@/lib/xp"
 
 interface GameLayoutProps {
@@ -41,18 +42,12 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
   const [showPunishment, setShowPunishment] = useState(false)
   const [punishmentMessage, setPunishmentMessage] = useState("")
   const { addNotification } = useNotification()
+  const { showLevelUp } = useLevelUp()
 
   // Reset quest timer when changing pages
   useEffect(() => {
     setQuestTimerKey((prev) => prev + 1)
   }, [activePage])
-
-  const pushActivity = (evt: ActivityEvent) => {
-    setPlayer({
-      ...player,
-      activityLog: [...(player.activityLog || []), evt],
-    })
-  }
 
   const handleStartQuest = (quest: Quest | DailyQuest) => {
     try {
@@ -75,7 +70,80 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
 
   const handleCompleteQuest = () => {
     if (!activeQuest) return
+
     try {
+      // Use functional setState to ensure we work with the latest state
+      setPlayer((prevPlayer) => {
+        const oldLevel = prevPlayer.level
+        const oldXP = prevPlayer.xp
+
+        // Calculate new XP
+        const newXP = oldXP + activeQuest.xp
+        console.log("Completing quest:", {
+          oldXP,
+          questXP: activeQuest.xp,
+          newXP,
+        })
+
+        // Calculate new level
+        const newLevel = Math.floor(newXP / 100) + 1
+
+        // Update quests/daily quests
+        let updatedQuests = prevPlayer.quests
+        if ("statIncreases" in activeQuest) {
+          updatedQuests = prevPlayer.quests.map((q) => (q.id === activeQuest.id ? { ...q, completed: true } : q))
+        }
+
+        let updatedDailyQuests = prevPlayer.dailyQuests
+        if ("penalty" in activeQuest) {
+          updatedDailyQuests = prevPlayer.dailyQuests.map((q) =>
+            q.id === activeQuest.id ? { ...q, completed: true } : q,
+          )
+        }
+
+        // Apply stat increases
+        const newStats = { ...prevPlayer.stats }
+        const statIncreases: Record<string, number> = {}
+
+        if ("statIncreases" in activeQuest && activeQuest.statIncreases) {
+          Object.entries(activeQuest.statIncreases).forEach(([stat, increase]) => {
+            if (stat in newStats && increase) {
+              newStats[stat as keyof typeof newStats] += increase
+              statIncreases[stat] = increase
+            }
+          })
+        }
+
+        // Show level up notification
+        if (newLevel > oldLevel && Object.keys(statIncreases).length > 0) {
+          setTimeout(() => showLevelUp(newLevel, statIncreases), 500)
+        }
+
+        // Create activity log entry
+        const activityEntry = {
+          id: Math.random().toString(36).slice(2),
+          date: new Date().toISOString(),
+          type: ("penalty" in activeQuest ? "daily-completed" : "quest-completed") as any,
+          refId: activeQuest.id,
+          title: activeQuest.title,
+          xpChange: activeQuest.xp,
+        }
+
+        // Return updated player
+        return {
+          ...prevPlayer,
+          quests: updatedQuests,
+          dailyQuests: updatedDailyQuests,
+          xp: newXP,
+          level: newLevel,
+          xpToNextLevel: newLevel * 100,
+          stats: newStats,
+          lifetimeXp: (prevPlayer.lifetimeXp || 0) + activeQuest.xp,
+          activityLog: [...(prevPlayer.activityLog || []), activityEntry],
+        }
+      })
+
+      // Set UI state
       setCompletedQuest(activeQuest)
       if ("statIncreases" in activeQuest && activeQuest.statIncreases) {
         setStatIncreases(activeQuest.statIncreases)
@@ -83,24 +151,10 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
         setStatIncreases({})
       }
 
-      // Log completion (do not mutate XP here to avoid double-count if QuestTimer also awards)
-      const type = "penalty" in activeQuest ? "daily-completed" : "quest-completed"
-      pushActivity({
-        id: id(),
-        date: new Date().toISOString(),
-        type,
-        refId: activeQuest.id,
-        title: activeQuest.title,
-        xpChange: activeQuest.xp,
-      })
-
-      // Track lifetime XP increases optimistically without changing current XP balance
-      setPlayer({
-        ...player,
-        lifetimeXp: (player.lifetimeXp || 0) + activeQuest.xp,
-      })
-
       setShowQuestComplete(true)
+      addNotification(`Quest completed! +${activeQuest.xp} XP`, "success")
+
+      // Clear active quest
       setActiveQuest(null)
       setTimeRemaining(null)
     } catch (error) {
@@ -118,23 +172,32 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
       setPunishmentMessage(`You skipped "${activeQuest.title}". Penalty: -${penalty} XP.`)
       setShowPunishment(true)
 
-      // Use functional setState to avoid stale state
-      setPlayer((prevPlayer) => ({
-        ...prevPlayer,
-        xp: Math.max(0, prevPlayer.xp - penalty),
-        activityLog: [
-          ...(prevPlayer.activityLog || []),
-          {
-            id: Math.random().toString(36).slice(2),
-            date: new Date().toISOString(),
-            type: type as any,
-            refId: activeQuest.id,
-            title: activeQuest.title,
-            xpChange: -penalty,
-          },
-        ],
-      }))
+      // Use functional setState
+      setPlayer((prevPlayer) => {
+        console.log("Cancelling quest:", {
+          oldXP: prevPlayer.xp,
+          penalty,
+          newXP: Math.max(0, prevPlayer.xp - penalty),
+        })
 
+        return {
+          ...prevPlayer,
+          xp: Math.max(0, prevPlayer.xp - penalty),
+          activityLog: [
+            ...(prevPlayer.activityLog || []),
+            {
+              id: Math.random().toString(36).slice(2),
+              date: new Date().toISOString(),
+              type: type as any,
+              refId: activeQuest.id,
+              title: activeQuest.title,
+              xpChange: -penalty,
+            },
+          ],
+        }
+      })
+
+      addNotification(`Penalty applied: -${penalty} XP`, "error")
       setActiveQuest(null)
       setTimeRemaining(null)
     } catch (error) {
@@ -260,8 +323,4 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
       />
     </div>
   )
-}
-
-function id() {
-  return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)
 }

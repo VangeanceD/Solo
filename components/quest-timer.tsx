@@ -6,8 +6,6 @@ import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { X, Star, CheckCircle } from "lucide-react"
 import { motion } from "framer-motion"
-import { useNotification } from "@/components/notification-provider"
-import { useLevelUp } from "@/components/level-up-provider"
 
 interface QuestTimerProps {
   quest: Quest | DailyQuest
@@ -28,9 +26,6 @@ export function QuestTimer({
   player,
   setPlayer,
 }: QuestTimerProps) {
-  const { addNotification } = useNotification()
-  const { showLevelUp } = useLevelUp()
-
   useEffect(() => {
     if (timeRemaining === null || timeRemaining <= 0) return
 
@@ -58,89 +53,6 @@ export function QuestTimer({
   const percentRemaining = (timeRemaining / totalSeconds) * 100
   const isLowTime = percentRemaining < 25
   const isWarningTime = percentRemaining < 50 && percentRemaining >= 25
-
-  const handleCompleteQuest = () => {
-    if (!player || !setPlayer) {
-      onComplete()
-      return
-    }
-
-    try {
-      // Use functional setState to avoid stale state
-      setPlayer((prevPlayer) => {
-        const oldLevel = prevPlayer.level
-        const oldXP = prevPlayer.xp
-
-        // Calculate new XP
-        const newXP = oldXP + quest.xp
-
-        // Calculate new level (level = floor(xp / 100) + 1)
-        const newLevel = Math.floor(newXP / 100) + 1
-
-        // Update quests
-        let updatedQuests = prevPlayer.quests
-        if ("statIncreases" in quest) {
-          updatedQuests = prevPlayer.quests.map((q) => (q.id === quest.id ? { ...q, completed: true } : q))
-        }
-
-        // Update daily quests
-        let updatedDailyQuests = prevPlayer.dailyQuests
-        if ("penalty" in quest) {
-          updatedDailyQuests = prevPlayer.dailyQuests.map((q) => (q.id === quest.id ? { ...q, completed: true } : q))
-        }
-
-        // Apply stat increases
-        const newStats = { ...prevPlayer.stats }
-        const statIncreases: Record<string, number> = {}
-
-        if ("statIncreases" in quest && quest.statIncreases) {
-          Object.entries(quest.statIncreases).forEach(([stat, increase]) => {
-            if (stat in newStats && increase) {
-              newStats[stat as keyof typeof newStats] += increase
-              statIncreases[stat] = increase
-            }
-          })
-        }
-
-        // Create updated player
-        const updatedPlayer = {
-          ...prevPlayer,
-          quests: updatedQuests,
-          dailyQuests: updatedDailyQuests,
-          xp: newXP,
-          level: newLevel,
-          xpToNextLevel: newLevel * 100,
-          stats: newStats,
-          lifetimeXp: (prevPlayer.lifetimeXp || 0) + quest.xp,
-          activityLog: [
-            ...(prevPlayer.activityLog || []),
-            {
-              id: Math.random().toString(36).slice(2),
-              date: new Date().toISOString(),
-              type: ("penalty" in quest ? "daily-completed" : "quest-completed") as any,
-              refId: quest.id,
-              title: quest.title,
-              xpChange: quest.xp,
-            },
-          ],
-        }
-
-        // Show level up if leveled up
-        if (newLevel > oldLevel && "statIncreases" in quest) {
-          showLevelUp(newLevel, statIncreases)
-        }
-
-        return updatedPlayer
-      })
-
-      addNotification(`Quest completed! +${quest.xp} XP`, "success")
-    } catch (error) {
-      console.error("Error completing quest:", error)
-      addNotification("Error completing quest", "error")
-    }
-
-    onComplete()
-  }
 
   return (
     <motion.div
@@ -187,7 +99,7 @@ export function QuestTimer({
 
       <div className="flex flex-col sm:flex-row gap-3">
         <Button
-          onClick={handleCompleteQuest}
+          onClick={onComplete}
           className="flex-1 py-2 bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary flex items-center justify-center text-sm"
         >
           <CheckCircle className="w-4 h-4 mr-2" />
