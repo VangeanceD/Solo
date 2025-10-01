@@ -14,7 +14,7 @@ export function MobileHeader({ player, onMenuToggle, isMenuOpen }: MobileHeaderP
   const xpPercentage = (player.xp / player.xpToNextLevel) * 100
 
   return (
-    <header className="sticky top-0 left-0 right-0 z-30 bg-black/95 backdrop-blur-lg border-b border-primary/30 shadow-[0_4px_12px_rgba(0,168,255,0.2)]">
+    <header className="fixed top-0 left-0 right-0 z-30 bg-black/95 backdrop-blur-lg border-b border-primary/30 shadow-[0_4px_12px_rgba(0,168,255,0.2)]">
       <div className="flex items-center justify-between p-3">
         {/* Menu Button */}
         <button onClick={onMenuToggle} className="p-2 text-primary hover:bg-primary/10 rounded-sm transition-colors">

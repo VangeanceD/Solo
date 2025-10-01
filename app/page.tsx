@@ -10,13 +10,14 @@ import { useLocalStorage } from "@/hooks/use-local-storage"
 import { NotificationProvider } from "@/components/notification-provider"
 import { LevelUpProvider } from "@/components/level-up-provider"
 import { ErrorBoundary } from "@/components/error-boundary"
-import { ThemeProviderEnhanced } from "@/components/theme-provider-enhanced"
+import { ThemeProviderEnhanced, useThemeEnhanced } from "@/components/theme-provider-enhanced"
 
-export default function Page() {
+function AppContent() {
   const [introCompleted, setIntroCompleted] = useState(false)
   const [player, setPlayer] = useLocalStorage<Player | null>("player", null)
   const [showIntro, setShowIntro] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
+  const { setTheme } = useThemeEnhanced()
 
   useEffect(() => {
     try {
@@ -74,6 +75,10 @@ export default function Page() {
     }
   }
 
+  const handleThemeSelect = (variant: any) => {
+    setTheme(variant.id)
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -91,18 +96,20 @@ export default function Page() {
   }
 
   return (
+    <NotificationProvider>
+      <LevelUpProvider>
+        <GameLayout player={player} setPlayer={setPlayer} onLogout={handleLogout} />
+        <VariantSelector onSelect={handleThemeSelect} />
+      </LevelUpProvider>
+    </NotificationProvider>
+  )
+}
+
+export default function Page() {
+  return (
     <ErrorBoundary>
       <ThemeProviderEnhanced>
-        <NotificationProvider>
-          <LevelUpProvider>
-            <GameLayout player={player} setPlayer={setPlayer} onLogout={handleLogout} />
-            <VariantSelector
-              onSelect={(variant) => {
-                console.log("Selected variant:", variant.name)
-              }}
-            />
-          </LevelUpProvider>
-        </NotificationProvider>
+        <AppContent />
       </ThemeProviderEnhanced>
     </ErrorBoundary>
   )

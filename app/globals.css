@@ -56,6 +56,11 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* Safe area support for notched devices */
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
   /* Mobile-specific optimizations */
   @media (max-width: 768px) {
     html {

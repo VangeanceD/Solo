@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { SideNavigation } from "@/components/side-navigation"
+import { BottomNavigation } from "@/components/bottom-navigation"
 import { MobileHeader } from "@/components/mobile-header"
 import { MobileMenu } from "@/components/mobile-menu"
 import { BackgroundEffects } from "@/components/background-effects"
@@ -21,10 +22,10 @@ import { SettingsPage } from "@/components/pages/settings-page"
 import { HeaderInfo } from "@/components/header-info"
 import { useNotification } from "@/components/notification-provider"
 import { useLevelUp } from "@/components/level-up-provider"
+import { ActivitySummaryPage } from "@/components/pages/activity-summary-page"
 import { useIsMobile } from "@/hooks/use-mobile"
 import type { Player, Quest, DailyQuest } from "@/lib/player"
 import { computeSkipPenalty } from "@/lib/xp"
-import { ActivitySummaryPage } from "@/components/pages/activity-summary-page" // Import added for ActivitySummaryPage
 
 interface GameLayoutProps {
   player: Player
@@ -296,7 +297,7 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
             onLogout={onLogout}
           />
 
-          <main className="relative z-10 pt-16 pb-4">
+          <main className="relative z-10 pt-16 pb-24">
             <div className="p-4">
               {activeQuest && (
                 <QuestTimer
@@ -314,6 +315,8 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
               {renderActivePage()}
             </div>
           </main>
+
+          <BottomNavigation activePage={activePage} onNavigate={handleNavigate} />
         </>
       ) : (
         // Desktop Layout
