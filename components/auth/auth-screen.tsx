@@ -3,169 +3,263 @@
 import type React from "react"
 
 import { useState } from "react"
+import { supabase, isSupabaseConfigured } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent } from "@/components/ui/card"
-import { BackgroundEffects } from "@/components/background-effects"
-import { supabase } from "@/lib/supabase"
-import { useNotification } from "@/components/notification-provider"
-import { motion } from "framer-motion"
-import { Loader2 } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Loader2, Sword, AlertCircle } from "lucide-react"
 
-export function AuthScreen() {
-  const [isLogin, setIsLogin] = useState(true)
+interface AuthScreenProps {
+  onAuthSuccess: () => void
+}
+
+export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [username, setUsername] = useState("")
   const [loading, setLoading] = useState(false)
-  const { addNotification } = useNotification()
+  const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // If Supabase is not configured, show local mode option
+  if (!isSupabaseConfigured()) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+        <Card className="w-full max-w-md border-slate-800 bg-slate-950/50 backdrop-blur">
+          <CardHeader className="space-y-1">
+            <div className="flex items-center justify-center mb-4">
+              <Sword className="h-12 w-12 text-amber-500" />
+            </div>
+            <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-amber-500 to-orange-600 bg-clip-text text-transparent">
+              Welcome, Hunter
+            </CardTitle>
+            <CardDescription className="text-center text-slate-400">Start your journey to greatness</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert className="border-amber-500/20 bg-amber-500/10">
+              <AlertCircle className="h-4 w-4 text-amber-500" />
+              <AlertDescription className="text-amber-200 text-sm">
+                Running in <strong>Local Mode</strong>. Your progress will be saved to this device only.
+                <br />
+                <br />
+                To enable cloud sync and authentication, add Supabase credentials in Project Settings.
+              </AlertDescription>
+            </Alert>
+
+            <Button
+              onClick={onAuthSuccess}
+              className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700"
+            >
+              Continue in Local Mode
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!supabase) return
+
     setLoading(true)
+    setError(null)
+    setMessage(null)
 
     try {
-      if (isLogin) {
-        // Login
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        })
-
-        if (error) throw error
-
-        addNotification("Welcome back, Hunter!", "success")
-      } else {
-        // Sign up
-        if (!username.trim()) {
-          addNotification("Please enter a username", "error")
-          setLoading(false)
-          return
-        }
-
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              username: username.trim(),
-            },
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            username,
           },
-        })
+        },
+      })
 
-        if (error) throw error
+      if (error) throw error
 
-        addNotification("Account created! Check your email to verify your account.", "success")
+      if (data.user) {
+        setMessage("Check your email for the confirmation link!")
       }
     } catch (error: any) {
-      addNotification(error.message || "Authentication failed", "error")
+      setError(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!supabase) return
+
+    setLoading(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) throw error
+
+      if (data.user) {
+        onAuthSuccess()
+      }
+    } catch (error: any) {
+      setError(error.message)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden">
-      <BackgroundEffects />
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+      <Card className="w-full max-w-md border-slate-800 bg-slate-950/50 backdrop-blur">
+        <CardHeader className="space-y-1">
+          <div className="flex items-center justify-center mb-4">
+            <Sword className="h-12 w-12 text-amber-500" />
+          </div>
+          <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-amber-500 to-orange-600 bg-clip-text text-transparent">
+            Welcome, Hunter
+          </CardTitle>
+          <CardDescription className="text-center text-slate-400">
+            Sign in or create an account to begin your journey
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="signin" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="signin">Sign In</TabsTrigger>
+              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            </TabsList>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md mx-4 relative z-10"
-      >
-        <div className="text-center mb-8">
-          <h1 className="text-4xl sm:text-5xl font-bold text-primary font-audiowide glow-text mb-2">ARISE</h1>
-          <p className="text-white/70 font-electrolize">Hunter Protocol v3.0</p>
-        </div>
-
-        <Card className="bg-black/90 backdrop-blur-lg border border-primary/30 animate-border-glow cyberpunk-border holographic-ui">
-          <CardContent className="p-6">
-            <div className="holographic-header mb-6">{isLogin ? "System Login" : "Hunter Registration"}</div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {!isLogin && (
-                <div>
-                  <Label htmlFor="username" className="text-white/70 font-michroma">
-                    Hunter Name
-                  </Label>
+            <TabsContent value="signin">
+              <form onSubmit={handleSignIn} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signin-email">Email</Label>
                   <Input
-                    id="username"
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="bg-black/60 border-primary/30 text-white font-electrolize mt-2"
-                    placeholder="Enter your hunter name"
-                    required={!isLogin}
+                    id="signin-email"
+                    type="email"
+                    placeholder="hunter@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="bg-slate-900 border-slate-800"
                   />
                 </div>
-              )}
-
-              <div>
-                <Label htmlFor="email" className="text-white/70 font-michroma">
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="bg-black/60 border-primary/30 text-white font-electrolize mt-2"
-                  placeholder="your@email.com"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="password" className="text-white/70 font-michroma">
-                  Password
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="bg-black/60 border-primary/30 text-white font-electrolize mt-2"
-                  placeholder="••••••••"
-                  required
-                  minLength={6}
-                />
-                {!isLogin && <p className="text-xs text-white/50 mt-1 font-electrolize">Minimum 6 characters</p>}
-              </div>
-
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full py-6 bg-primary/20 hover:bg-primary/30 text-primary rounded-none border border-primary/30 transition-colors tracking-wider btn-primary font-michroma"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {isLogin ? "LOGGING IN..." : "CREATING ACCOUNT..."}
-                  </>
-                ) : (
-                  <>{isLogin ? "LOGIN" : "CREATE ACCOUNT"}</>
+                <div className="space-y-2">
+                  <Label htmlFor="signin-password">Password</Label>
+                  <Input
+                    id="signin-password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="bg-slate-900 border-slate-800"
+                  />
+                </div>
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
                 )}
-              </Button>
-            </form>
+                {message && (
+                  <Alert className="border-green-500/20 bg-green-500/10">
+                    <AlertDescription className="text-green-200">{message}</AlertDescription>
+                  </Alert>
+                )}
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    "Sign In"
+                  )}
+                </Button>
+              </form>
+            </TabsContent>
 
-            <div className="mt-6 text-center">
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-primary/70 hover:text-primary text-sm font-electrolize transition-colors"
-              >
-                {isLogin ? "Don't have an account? Sign up" : "Already have an account? Login"}
-              </button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <p className="text-center text-white/50 text-xs mt-4 font-electrolize">
-          Your data is securely stored and encrypted
-        </p>
-      </motion.div>
+            <TabsContent value="signup">
+              <form onSubmit={handleSignUp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-username">Username</Label>
+                  <Input
+                    id="signup-username"
+                    type="text"
+                    placeholder="Shadow Monarch"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                    className="bg-slate-900 border-slate-800"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">Email</Label>
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    placeholder="hunter@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="bg-slate-900 border-slate-800"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">Password</Label>
+                  <Input
+                    id="signup-password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="bg-slate-900 border-slate-800"
+                  />
+                </div>
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+                {message && (
+                  <Alert className="border-green-500/20 bg-green-500/10">
+                    <AlertDescription className="text-green-200">{message}</AlertDescription>
+                  </Alert>
+                )}
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating account...
+                    </>
+                  ) : (
+                    "Create Account"
+                  )}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   )
 }
