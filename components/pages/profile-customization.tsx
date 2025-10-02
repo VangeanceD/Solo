@@ -22,86 +22,82 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
   const [customTitle, setCustomTitle] = useState("")
 
   const avatars: AvatarOption[] = [
-    { id: "default", src: "/avatars/default.png", name: "Default Hunter", baseCost: 0 },
+    { id: "default", src: "/avatars/default.png", name: "Default", baseCost: 0 },
     {
       id: "naruto",
-      src: "/naruto-avatar.png",
+      src: "/naruto-anime-avatar.jpg",
       name: "Naruto Uzumaki",
-      baseCost: 800,
+      baseCost: 600,
     },
     {
       id: "luffy",
-      src: "/luffy-avatar.png",
+      src: "/luffy-anime-avatar.jpg",
       name: "Monkey D. Luffy",
-      baseCost: 800,
+      baseCost: 600,
     },
     {
       id: "zoro",
-      src: "/zoro-avatar.png",
+      src: "/zoro-anime-avatar.jpg",
       name: "Roronoa Zoro",
-      baseCost: 900,
+      baseCost: 700,
     },
     {
       id: "goku",
-      src: "/goku-avatar.png",
+      src: "/goku-anime-avatar.jpg",
       name: "Son Goku",
-      baseCost: 1200,
-    },
-    {
-      id: "gojo",
-      src: "/gojo-avatar.png",
-      name: "Satoru Gojo",
-      baseCost: 1500,
-    },
-    {
-      id: "sukuna",
-      src: "/sukuna-avatar.png",
-      name: "Ryomen Sukuna",
-      baseCost: 1400,
+      baseCost: 800,
     },
     {
       id: "aizen",
-      src: "/aizen-avatar.png",
+      src: "/aizen-anime-avatar.jpg",
       name: "Sosuke Aizen",
-      baseCost: 1300,
-    },
-    {
-      id: "madara",
-      src: "/madara-avatar.png",
-      name: "Madara Uchiha",
-      baseCost: 1300,
-    },
-    {
-      id: "allmight",
-      src: "/allmight-avatar.png",
-      name: "All Might",
       baseCost: 1000,
     },
     {
+      id: "madara",
+      src: "/madara-anime-avatar.jpg",
+      name: "Madara Uchiha",
+      baseCost: 1000,
+    },
+    {
+      id: "allmight",
+      src: "/all-might-anime-avatar.jpg",
+      name: "All Might",
+      baseCost: 800,
+    },
+    {
       id: "jotaro",
-      src: "/jotaro-avatar.png",
+      src: "/jotaro-anime-avatar.jpg",
       name: "Jotaro Kujo",
-      baseCost: 1100,
+      baseCost: 900,
+    },
+    {
+      id: "gojo",
+      src: "/gojo-anime-avatar.jpg",
+      name: "Satoru Gojo",
+      baseCost: 1200,
+    },
+    {
+      id: "toji",
+      src: "/toji-anime-avatar.jpg",
+      name: "Toji Fushiguro",
+      baseCost: 1300,
     },
   ]
 
   const titles = [
-    { id: "novice", name: "Novice Hunter", cost: 0 },
-    { id: "rookie", name: "Rookie Warrior", cost: 500 },
-    { id: "genin", name: "Genin", cost: 1000 },
-    { id: "chunin", name: "Chunin", cost: 2000 },
-    { id: "jonin", name: "Jonin", cost: 3000 },
-    { id: "anbu", name: "ANBU Black Ops", cost: 4500 },
-    { id: "hokage", name: "Hokage", cost: 7000 },
-    { id: "pirate", name: "Pirate", cost: 1500 },
-    { id: "yonko", name: "Yonko", cost: 8000 },
+    { id: "novice", name: "Novice", cost: 0 },
+    { id: "rookie", name: "Rookie Warrior", cost: 400 },
+    { id: "genin", name: "Genin", cost: 800 },
+    { id: "chunin", name: "Chunin", cost: 1400 },
+    { id: "jonin", name: "Jonin", cost: 2200 },
+    { id: "anbu", name: "ANBU Black Ops", cost: 3500 },
+    { id: "hokage", name: "Hokage", cost: 6000 },
+    { id: "pirate", name: "Pirate", cost: 1000 },
+    { id: "yonko", name: "Yonko", cost: 7000 },
     { id: "pirateking", name: "Pirate King", cost: 12000 },
-    { id: "supersaiyan", name: "Super Saiyan", cost: 9000 },
+    { id: "supersaiyan", name: "Super Saiyan", cost: 8000 },
     { id: "shadowmonarch", name: "Shadow Monarch", cost: 15000 },
-    { id: "wizard", name: "Wizard King", cost: 10000 },
-    { id: "demon", name: "Demon Slayer", cost: 6000 },
-    { id: "god", name: "God Level", cost: 10000 },
-    { id: "transcendent", name: "Transcendent Being", cost: 20000 },
   ]
 
   const handleAvatarChange = (option: AvatarOption) => {
@@ -166,6 +162,7 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
       return
     }
 
+    // Proportional price for custom title: 3% of lifetime XP, min 2,500, max 25,000
     const proportional = Math.round((player.lifetimeXp || 0) * 0.03)
     const cost = Math.max(2500, Math.min(25000, proportional))
     if (player.xp < cost) {
@@ -234,13 +231,13 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
                   key={option.id}
                   className={`bg-black/60 backdrop-blur-md border ${
                     isCurrent ? "border-primary animate-border-glow" : "border-primary/30 hover:border-primary/60"
-                  } transition-all duration-300 cursor-pointer quest-card hover:scale-105`}
+                  } transition-all duration-300 cursor-pointer quest-card`}
                   onClick={() => handleAvatarChange(option)}
                 >
                   <CardContent className="p-4 flex flex-col items-center">
-                    <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-primary/50 mb-3 animate-pulse-glow shadow-lg shadow-primary/20">
+                    <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-primary/50 mb-3 animate-pulse-glow">
                       <img
-                        src={option.src || "/placeholder.svg?height=96&width=96&query=anime+avatar"}
+                        src={option.src || "/placeholder.svg?height=80&width=80&query=anime+avatar"}
                         alt={option.name}
                         className="w-full h-full object-cover"
                         style={{ objectPosition: "center" }}
@@ -265,23 +262,19 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
                 className={`bg-black/60 backdrop-blur-md border ${
                   player.title === title.name
                     ? "border-primary animate-border-glow"
-                    : title.cost >= 10000
+                    : title.cost > 7000
                       ? "border-yellow-500/30 hover:border-yellow-500/60"
-                      : title.cost >= 5000
+                      : title.cost > 3000
                         ? "border-purple-500/30 hover:border-purple-500/60"
                         : "border-primary/30 hover:border-primary/60"
-                } transition-all duration-300 cursor-pointer quest-card hover:scale-105`}
+                } transition-all duration-300 cursor-pointer quest-card`}
                 onClick={() => handleTitleChange(title.name, title.cost)}
               >
                 <CardContent className="p-3">
                   <div className="flex justify-between items-center">
                     <div
                       className={`font-michroma text-sm ${
-                        title.cost >= 10000
-                          ? "text-yellow-400 glow-text"
-                          : title.cost >= 5000
-                            ? "text-purple-400"
-                            : "text-primary"
+                        title.cost > 7000 ? "text-yellow-400" : title.cost > 3000 ? "text-purple-400" : "text-primary"
                       }`}
                     >
                       {title.name}
@@ -296,9 +289,9 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
           </div>
 
           <div className="bg-black/60 backdrop-blur-md border border-yellow-500/50 p-6 animate-border-glow cyberpunk-border holographic-ui">
-            <div className="holographic-header text-yellow-400">🌟 LEGENDARY CUSTOM TITLE</div>
+            <div className="holographic-header text-yellow-400">Pro Custom Title (proportional)</div>
             <p className="text-yellow-400/70 text-sm mb-4 font-electrolize">
-              Create your own legendary title! Price scales with lifetime XP (3%, min 2,500).
+              Price scales with your lifetime XP (3% of lifetime XP, min 2,500).
             </p>
             <div className="flex space-x-2">
               <div className="flex-1">
@@ -330,5 +323,6 @@ export function ProfileCustomizationPage({ player, setPlayer }: ProfileCustomiza
 }
 
 function cryptoRandomId() {
+  // Safe enough for UI ids
   return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)
 }
