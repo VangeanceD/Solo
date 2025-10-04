@@ -3,20 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
-import {
-  Home,
-  Star,
-  CalendarCheck,
-  ListChecks,
-  UserCog,
-  LayoutGrid,
-  Gift,
-  Settings,
-  Activity,
-  LogOut,
-  Menu,
-  X,
-} from "lucide-react"
+import { Home, Star, CalendarCheck, ListChecks, UserCog, Gift, Settings, Activity, LogOut, Menu, X } from "lucide-react"
 import type { Player } from "@/lib/player"
 
 interface SideNavigationProps {
@@ -142,7 +129,6 @@ export function SideNavigation({ activePage, onNavigate, player, onLogout }: Sid
             <NavButton page="schedule" icon={CalendarCheck} label="Schedule" />
             <NavButton page="todo" icon={ListChecks} label="To-Do" />
             <NavButton page="customize-profile" icon={UserCog} label="Customize Profile" />
-            <NavButton page="inventory" icon={LayoutGrid} label="Inventory" />
             <NavButton page="rewards" icon={Gift} label="Rewards" />
             <NavButton page="activity" icon={Activity} label="Activity" />
             <NavButton page="settings" icon={Settings} label="Settings" />

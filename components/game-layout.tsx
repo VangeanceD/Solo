@@ -16,7 +16,6 @@ import { TodoPage } from "@/components/pages/todo-page"
 import { WorkoutAccountabilityPage } from "@/components/pages/workout-accountability-page"
 import { ProfilePage } from "@/components/pages/profile-page"
 import { ProfileCustomizationPage } from "@/components/pages/profile-customization"
-import { InventoryPage } from "@/components/pages/inventory-page"
 import { RewardsPage } from "@/components/pages/rewards-page"
 import { SettingsPage } from "@/components/pages/settings-page"
 import { HeaderInfo } from "@/components/header-info"
@@ -262,8 +261,6 @@ export function GameLayout({ player, setPlayer, onLogout }: GameLayoutProps) {
         return <WorkoutAccountabilityPage player={safePlayer} setPlayer={setPlayer} />
       case "customize-profile":
         return <ProfileCustomizationPage player={safePlayer} setPlayer={setPlayer} />
-      case "inventory":
-        return <InventoryPage player={safePlayer} />
       case "rewards":
         return <RewardsPage player={safePlayer} setPlayer={setPlayer} />
       case "settings":

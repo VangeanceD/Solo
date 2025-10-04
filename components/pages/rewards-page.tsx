@@ -1,9 +1,11 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Gift, Star } from "lucide-react"
+import { Gift, Star, Plus } from "lucide-react"
 import { useNotification } from "@/components/notification-provider"
+import { CreateRewardModal } from "@/components/create-reward-modal"
 import type { Player } from "@/lib/player"
 
 interface RewardsPageProps {
@@ -13,6 +15,7 @@ interface RewardsPageProps {
 
 export function RewardsPage({ player, setPlayer }: RewardsPageProps) {
   const { addNotification } = useNotification()
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   const handleClaimReward = (rewardId: string, cost: number) => {
     if (player.xp < cost) {
@@ -22,10 +25,20 @@ export function RewardsPage({ player, setPlayer }: RewardsPageProps) {
 
     const updatedRewards = player.rewards.map((reward) => (reward.id === rewardId ? { ...reward, used: true } : reward))
 
+    const activityEntry = {
+      id: Math.random().toString(36).slice(2),
+      date: new Date().toISOString(),
+      type: "avatar-change" as const,
+      title: player.rewards.find((r) => r.id === rewardId)?.title || "Reward Claimed",
+      xpChange: -cost,
+      notes: "Reward claimed",
+    }
+
     const updatedPlayer = {
       ...player,
       rewards: updatedRewards,
       xp: player.xp - cost,
+      activityLog: [...(player.activityLog || []), activityEntry],
     }
 
     setPlayer(updatedPlayer)
@@ -34,7 +47,16 @@ export function RewardsPage({ player, setPlayer }: RewardsPageProps) {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-primary font-audiowide glow-text">REWARDS</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-primary font-audiowide glow-text">REWARDS</h1>
+        <Button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 font-michroma"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          CREATE REWARD
+        </Button>
+      </div>
 
       <div className="bg-black/60 backdrop-blur-md border border-primary/30 p-4 animate-border-glow cyberpunk-border holographic-ui mb-4">
         <div className="holographic-header">Available XP</div>
@@ -76,6 +98,20 @@ export function RewardsPage({ player, setPlayer }: RewardsPageProps) {
           </Card>
         ))}
       </div>
+
+      {player.rewards.length === 0 && (
+        <div className="text-center py-12">
+          <Gift className="w-16 h-16 text-primary/30 mx-auto mb-4" />
+          <p className="text-white/50 font-electrolize">No rewards yet. Create your first reward!</p>
+        </div>
+      )}
+
+      <CreateRewardModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        player={player}
+        setPlayer={setPlayer}
+      />
     </div>
   )
 }

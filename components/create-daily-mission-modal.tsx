@@ -81,7 +81,7 @@ export function CreateDailyMissionModal({ isOpen, onClose, player, setPlayer }: 
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", duration: 0.5 }}
-            className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-2xl z-50 bg-black/95 border border-primary/30 overflow-hidden animate-border-glow cyberpunk-border holographic-ui"
+            className="fixed left-4 right-4 top-4 bottom-4 md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-2xl md:h-auto md:bottom-auto md:right-auto z-50 bg-black/95 border border-primary/30 overflow-hidden animate-border-glow cyberpunk-border holographic-ui"
           >
             <div className="flex items-center justify-between p-4 border-b border-primary/30">
               <h2 className="text-xl font-bold text-primary font-audiowide glow-text">CREATE DAILY MISSION</h2>
